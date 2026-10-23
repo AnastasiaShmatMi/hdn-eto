@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { ApiError, fetchHost, hostAction } from '../api';
 import { Brand } from '../components/Brand';
-import { QrCode } from '../components/QrCode';
 import { WordGrid } from '../components/WordGrid';
 import { useFresh } from '../fresh';
 import { normalize, usesBank, WORD_BANK } from '../rules';
@@ -28,9 +27,6 @@ export function Host() {
   const [checking, setChecking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<Note>(null);
-  const [link, setLink] = useState('');
-  const [linkTouched, setLinkTouched] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [filter, setFilter] = useState<Filter>('all');
   const [armReset, setArmReset] = useState(false);
   const [armDelete, setArmDelete] = useState<string | null>(null);
@@ -62,10 +58,6 @@ export function Host() {
       setOffline(true);
     }
   }, { visible: 1000, hidden: 1000 });
-
-  useEffect(() => {
-    if (!linkTouched && state?.joinUrl) setLink(state.joinUrl);
-  }, [linkTouched, state?.joinUrl]);
 
   async function enter(event: FormEvent) {
     event.preventDefault();
@@ -272,51 +264,6 @@ export function Host() {
           )}
         </section>
       )}
-
-      <section className="panel qr-row">
-        <div className="host-qr">
-          <QrCode value={link} />
-        </div>
-        <div className="stack">
-          <label className="field">
-            <span>Ссылка в коде</span>
-            <input
-              value={link}
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellCheck={false}
-              onChange={(event) => {
-                setLinkTouched(true);
-                setLink(event.target.value);
-              }}
-            />
-          </label>
-          <div className="row">
-            <button
-              type="button"
-              onClick={() => {
-                void navigator.clipboard.writeText(link).then(() => {
-                  setCopied(true);
-                  window.setTimeout(() => setCopied(false), 1600);
-                }).catch(() => {
-                  setNote({ type: 'err', text: 'Не удалось скопировать. Выдели ссылку вручную.' });
-                });
-              }}
-            >
-              {copied ? 'Скопировано' : 'Скопировать'}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setLinkTouched(true);
-                setLink(`${window.location.origin}/`);
-              }}
-            >
-              этот экран
-            </button>
-          </div>
-        </div>
-      </section>
 
       <section className="panel stack">
         <div className="row">

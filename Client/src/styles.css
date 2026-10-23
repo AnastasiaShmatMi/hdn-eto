@@ -258,7 +258,6 @@ a { color: #a13d6c; font-weight: 800; }
 }
 
 .qr-frame img { display: block; width: min(68vmin, 520px); height: auto; }
-.host-qr .qr-frame img { width: min(220px, 72vw); }
 
 .call-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
 .call-form .field { flex: 1 1 240px; }
