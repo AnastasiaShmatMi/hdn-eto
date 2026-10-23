@@ -32,6 +32,7 @@ export function Guest() {
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
+  const [selectedFrom, setSelectedFrom] = useState<number | null>(null);
   const accept = useFresh();
 
   useInterval(async () => {
@@ -55,18 +56,24 @@ export function Guest() {
     return WORD_BANK.find((item) => normalize(item) === normalize(word)) ?? word;
   }
 
+  function choose(word: string | null) {
+    setSelected(word);
+    setSelectedFrom(null);
+  }
+
   function place(index: number) {
     const next = cells.slice();
     if (!selected) {
       if (!next[index]) return;
       setSelected(canonical(next[index]));
+      setSelectedFrom(index);
       next[index] = '';
     } else {
-      const from = next.findIndex((cell) => normalize(cell) === normalize(selected));
       const displaced = next[index];
       next[index] = canonical(selected);
-      if (from >= 0) next[from] = displaced;
+      if (selectedFrom !== null && selectedFrom !== index) next[selectedFrom] = displaced;
       setSelected(null);
+      setSelectedFrom(null);
     }
     setCells(next);
     remember(name, next);
@@ -91,6 +98,7 @@ export function Guest() {
       setName(checked.name);
       setCells(OFFICIAL_CELLS.slice());
       setSelected(null);
+      setSelectedFrom(null);
       remember(checked.name, OFFICIAL_CELLS);
       setEditing(false);
       setOffline(false);
@@ -155,7 +163,7 @@ export function Guest() {
                   type="button"
                   className={active ? 'chip selected' : 'chip'}
                   aria-pressed={active}
-                  onClick={() => setSelected(active ? null : word)}
+                  onClick={() => choose(active ? null : word)}
                 >
                   {word}
                 </button>
@@ -182,6 +190,7 @@ export function Guest() {
               remember(player.name, player.cells);
               setFormError('');
               setSelected(null);
+              setSelectedFrom(null);
               setEditing(true);
             }}
           >
