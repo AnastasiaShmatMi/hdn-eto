@@ -178,6 +178,13 @@ export function Host() {
       <p className="phase">{state.phase === 'live' ? 'Игра идёт' : 'Набор карточек'}</p>
       {offline && <p className="banner">Связь прервалась.</p>}
 
+      {state.template && state.template.length === 9 && (
+        <section className="panel stack">
+          <h2>Правильный вариант</h2>
+          <WordGrid cells={state.template} />
+        </section>
+      )}
+
       <section className="panel qr-row">
         <div className="host-qr">
           <QrCode value={link} />

@@ -158,6 +158,11 @@ test('одинаковые имена нумеруются, бинго выше 
     ],
   };
   const view = hostView(state, 'https://cards.example/');
+  assert.deepEqual(view.template, [
+    'воршип', 'кофе', 'молитва',
+    'домашка', 'голубь', 'дом',
+    'альфа', 'пастор', 'ковер',
+  ]);
   assert.deepEqual(view.players.map((player) => player.displayName), ['Аня · 1', 'Боря', 'Аня · 2']);
   assert.equal(view.players[0].bingo, true);
   assert.equal(view.players[1].bingo, false);
@@ -180,7 +185,7 @@ test('стол помнит карточку, старт, слово и возв
     assert.throws(() => game.start(), /Сначала нужна хотя бы одна карточка/);
     assert.throws(
       () => game.saveCard({ id, name: 'Аня', cells: ['а', 'б', 'в', 'г', 'д', 'е', 'ж', 'з', 'и'] }),
-      /списка/,
+      /слов/,
     );
     game.saveCard({ id, name: 'Аня', cells });
     const hidden = game.publicState(id);

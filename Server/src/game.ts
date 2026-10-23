@@ -7,8 +7,8 @@ import {
   hostView,
   normalize,
   publicView,
-  spellOfficial,
-  usesOfficialWords,
+  spellAllowed,
+  usesAllowedWords,
   validateCard,
   type StoredCalled,
   type StoredPlayer,
@@ -117,10 +117,10 @@ export function createGame(file: string) {
       }
       const checked = validateCard(record.name, record.cells);
       if (!checked.ok) throw new GameError(400, checked.error);
-      if (!usesOfficialWords(checked.cells)) {
-        throw new GameError(400, 'Поставь все слова из списка.');
+      if (!usesAllowedWords(checked.cells)) {
+        throw new GameError(400, 'Поставь слова из списка.');
       }
-      checked.cells = spellOfficial(checked.cells);
+      checked.cells = spellAllowed(checked.cells);
       const existing = state.players.find((player) => player.id === id);
       if (!existing && state.players.length >= MAX_CARDS) {
         throw new GameError(400, 'Больше 150 карточек стол не принимает.');

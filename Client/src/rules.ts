@@ -1,16 +1,14 @@
 const LIGHT_PUNCTUATION = /[.,?!;:…()[\]{}«»„“”‚‘’"'`‹›\-–—―/\\]/g;
 
 export const WORD_BANK = [
-  'воршип', 'кофе', 'молитва',
-  'домашка', 'голубь', 'дом',
-  'альфа', 'пастор', 'ковер',
+  'воршип', 'кофе', 'молитва', 'домашка', 'голубь', 'дом',
+  'альфа', 'пастор', 'ковер', 'библия', 'молодежка', 'семья', 'забота', 'работа',
 ];
 
 export function usesBank(cells: string[]): boolean {
-  if (cells.length !== WORD_BANK.length) return false;
-  const need = WORD_BANK.map((word) => normalize(word)).sort();
-  const got = cells.map((word) => normalize(word)).sort();
-  return need.every((word, index) => word === got[index]);
+  return cells.length === 9 && cells.every((cell) => (
+    WORD_BANK.some((word) => normalize(word) === normalize(cell))
+  ));
 }
 
 export function normalize(value: string): string {

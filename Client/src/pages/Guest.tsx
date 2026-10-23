@@ -84,7 +84,7 @@ export function Guest() {
       return;
     }
     if (!usesBank(checked.cells)) {
-      setFormError('Поставь все слова из списка.');
+      setFormError('Поставь слова из списка.');
       return;
     }
     setSaving(true);
@@ -146,28 +146,24 @@ export function Guest() {
               }}
             />
           </label>
-          <p className="muted">Нажми слово, потом клетку.</p>
-          <div className="sheets">
-            {[0, 1].map((copy) => (
-              <div className="sheet" key={copy} aria-label="Список слов">
-                {WORD_BANK.map((word) => {
-                  const used = cells.some((cell) => normalize(cell) === normalize(word));
-                  const active = !used && selected !== null && normalize(selected) === normalize(word);
-                  return (
-                    <button
-                      key={word}
-                      type="button"
-                      className={used ? 'pick used' : active ? 'pick selected' : 'pick'}
-                      aria-pressed={active}
-                      disabled={used}
-                      onClick={() => choose(active ? null : word)}
-                    >
-                      {word}
-                    </button>
-                  );
-                })}
-              </div>
-            ))}
+          <p className="muted">Выбери нужные слова и поставь их в клетки.</p>
+          <div className="word-list" aria-label="Список слов">
+            {WORD_BANK.map((word) => {
+              const used = cells.some((cell) => normalize(cell) === normalize(word));
+              const active = !used && selected !== null && normalize(selected) === normalize(word);
+              return (
+                <button
+                  key={word}
+                  type="button"
+                  className={used ? 'pick used' : active ? 'pick selected' : 'pick'}
+                  aria-pressed={active}
+                  disabled={used}
+                  onClick={() => choose(active ? null : word)}
+                >
+                  {word}
+                </button>
+              );
+            })}
           </div>
           <Brand />
           <WordGrid cells={cells} onCell={place} />

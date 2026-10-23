@@ -44,4 +44,5 @@ export type HostState = {
   revision: number;
   players: PlayerView[];
   cloud: CloudWord[];
+  template?: string[];
 };

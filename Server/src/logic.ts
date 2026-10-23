@@ -65,9 +65,14 @@ export function normalize(value: string): string {
     .trim();
 }
 
+export const ALLOWED_WORDS = [
+  'воршип', 'кофе', 'молитва', 'домашка', 'голубь', 'дом',
+  'альфа', 'пастор', 'ковер', 'библия', 'молодежка', 'семья', 'забота', 'работа',
+];
+
 export const OFFICIAL_CELLS = [
   'воршип', 'кофе', 'молитва',
-  'домашка', 'дом', 'голубь',
+  'домашка', 'голубь', 'дом',
   'альфа', 'пастор', 'ковер',
 ];
 
@@ -76,15 +81,14 @@ export function isOfficialOrder(cells: string[]): boolean {
     && cells.every((cell, index) => normalize(cell) === normalize(OFFICIAL_CELLS[index]));
 }
 
-export function usesOfficialWords(cells: string[]): boolean {
-  if (cells.length !== OFFICIAL_CELLS.length) return false;
-  const need = OFFICIAL_CELLS.map((word) => normalize(word)).sort();
-  const got = cells.map((word) => normalize(word)).sort();
-  return need.every((word, index) => word === got[index]);
+export function usesAllowedWords(cells: string[]): boolean {
+  return cells.length === 9 && cells.every((cell) => (
+    ALLOWED_WORDS.some((word) => normalize(word) === normalize(cell))
+  ));
 }
 
-export function spellOfficial(cells: string[]): string[] {
-  return cells.map((cell) => OFFICIAL_CELLS.find((word) => normalize(word) === normalize(cell)) ?? cell);
+export function spellAllowed(cells: string[]): string[] {
+  return cells.map((cell) => ALLOWED_WORDS.find((word) => normalize(word) === normalize(cell)) ?? cell);
 }
 
 export function matchTemplate(cells: string[]): { templateMarks: boolean[]; matchCount: number; matchText: string } {
@@ -204,6 +208,7 @@ export function hostView(state: StoredState, joinUrl: string) {
     revision: state.revision,
     players: presentPlayers(state),
     cloud: wordCloud(state.players, state.called),
+    template: OFFICIAL_CELLS.slice(),
   };
 }
 
