@@ -210,13 +210,13 @@ export function Guest() {
 
       {showLive && player && (
         <section className="stack">
-          {player.matchText && <p className="lead">{player.matchText}</p>}
           {player.bingo && (
             <div className="bingo-banner">
               <p className="bingo-word">БИНГО</p>
-              <p>Линия сложилась: {player.lines.join(', ')}. Покажи телефон ведущему.</p>
+              <p>Совпали три клетки: {player.lines.join(', ')}.</p>
             </div>
           )}
+          {player.matchText && <p className="lead">{player.matchText}</p>}
           <Brand />
           <WordGrid
             cells={player.cells}
@@ -229,7 +229,7 @@ export function Guest() {
             <p className="lead">Сейчас звучит: {state.called[state.called.length - 1].text}</p>
           )}
           {!player.bingo && player.closest === 2 && (
-            <p className="almost">ещё одно слово, и линия сложится.</p>
+            <p className="almost">Ещё одна клетка, и будет бинго.</p>
           )}
         </section>
       )}

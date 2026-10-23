@@ -170,12 +170,7 @@ export type Score = {
   closest: number;
 };
 
-export function evaluate(cells: string[], called: string[]): Score {
-  const calledKeys = new Set(called.map((word) => normalize(word)).filter(Boolean));
-  const marks = cells.map((cell) => {
-    const key = normalize(cell);
-    return key !== '' && calledKeys.has(key);
-  });
+export function scoreLines(marks: boolean[]): Omit<Score, 'marks'> {
   const lines: string[] = [];
   const winning = Array.from({ length: 9 }, () => false);
   let closest = 0;
@@ -187,7 +182,16 @@ export function evaluate(cells: string[], called: string[]): Score {
       for (const index of line.cells) winning[index] = true;
     }
   }
-  return { marks, winning, lines, bingo: lines.length > 0, closest };
+  return { winning, lines, bingo: lines.length > 0, closest };
+}
+
+export function evaluate(cells: string[], called: string[]): Score {
+  const calledKeys = new Set(called.map((word) => normalize(word)).filter(Boolean));
+  const marks = cells.map((cell) => {
+    const key = normalize(cell);
+    return key !== '' && calledKeys.has(key);
+  });
+  return { marks, ...scoreLines(marks) };
 }
 
 export function countCardsWith(players: StoredPlayer[], text: string): number {
@@ -257,28 +261,30 @@ function presentPlayers(state: StoredState): PlayerView[] {
   const calledTexts = state.called.map((item) => item.text);
   const reveal = state.phase === 'live';
   const views = withDisplayNames(state.players).map((player) => {
-    const score = evaluate(player.cells, calledTexts);
     const template = reveal
       ? matchTemplate(player.cells, activeTemplate(state))
       : { templateMarks: Array.from({ length: 9 }, () => false), matchCount: 0, matchText: '' };
+    const line = reveal
+      ? scoreLines(template.templateMarks)
+      : { winning: Array.from({ length: 9 }, () => false), lines: [], bingo: false, closest: 0 };
     return {
       id: player.id,
       name: player.name,
       displayName: player.displayName,
       cells: player.cells,
-      marks: score.marks,
-      winning: score.winning,
-      lines: score.lines,
-      bingo: score.bingo,
-      closest: score.closest,
+      marks: evaluate(player.cells, calledTexts).marks,
+      winning: line.winning,
+      lines: line.lines,
+      bingo: line.bingo,
+      closest: line.closest,
       templateMarks: template.templateMarks,
       matchCount: template.matchCount,
       matchText: template.matchText,
     };
   });
   views.sort((a, b) => {
-    if (a.matchCount !== b.matchCount) return b.matchCount - a.matchCount;
     if (a.bingo !== b.bingo) return a.bingo ? -1 : 1;
+    if (a.matchCount !== b.matchCount) return b.matchCount - a.matchCount;
     if (a.closest !== b.closest) return b.closest - a.closest;
     return a.displayName.localeCompare(b.displayName, 'ru', { numeric: true });
   });

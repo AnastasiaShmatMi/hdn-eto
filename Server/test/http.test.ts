@@ -79,7 +79,7 @@ test('запросы: карточка, старт, слово, публично
     assert.equal(live.phase, 'live');
     assert.equal(live.called.at(-1)?.text, 'воршип!');
     assert.equal(live.player.marks[0], true);
-    assert.equal(live.player.bingo, false);
+    assert.equal(live.player.bingo, true);
 
     const returned = await fetch(`${base}/api/host/lobby`, {
       method: 'POST',

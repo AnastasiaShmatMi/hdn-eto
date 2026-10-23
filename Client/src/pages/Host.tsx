@@ -203,6 +203,7 @@ export function Host() {
     );
   }
 
+  const bingoPlayers = state.phase === 'live' ? state.players.filter((player) => player.bingo) : [];
   const shown = state.players.filter((player) => {
     if (filter === 'bingo') return player.bingo;
     if (filter === 'close') return !player.bingo && player.closest === 2;
@@ -301,6 +302,19 @@ export function Host() {
           </p>
         )}
       </section>
+
+      {state.phase === 'live' && (
+        <section className="panel stack">
+          <h2>Бинго</h2>
+          {bingoPlayers.length === 0 ? (
+            <p className="muted">Пока ни у кого.</p>
+          ) : (
+            <ul className="bingo-list">
+              {bingoPlayers.map((player) => <li key={player.id}>{player.displayName}</li>)}
+            </ul>
+          )}
+        </section>
+      )}
 
       <section className="stack">
         <div className="row filters">

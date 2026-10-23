@@ -163,15 +163,46 @@ test('одинаковые имена нумеруются, бинго выше 
     'домашка', 'голубь', 'дом',
     'альфа', 'пастор', 'ковер',
   ]);
-  assert.deepEqual(view.players.map((player) => player.displayName), ['Аня · 1', 'Боря', 'Аня · 2']);
-  assert.equal(view.players[0].bingo, true);
-  assert.equal(view.players[1].bingo, false);
-  assert.equal(view.players[1].closest, 2);
-  assert.equal(view.players[2].closest, 0);
+  assert.deepEqual(view.players.map((player) => player.displayName), ['Аня · 1', 'Аня · 2', 'Боря']);
+  assert.equal(view.players.every((player) => !player.bingo), true);
   const tree = view.cloud.find((item) => item.text === 'а0');
   assert.ok(tree);
   assert.equal(tree.called, true);
   assert.equal(tree.count, 1);
+});
+
+test('бинго — три клетки шаблона в ряд, столбец или диагональ', () => {
+  const row = ['воршип', 'кофе', 'молитва', 'голубь', 'дом', 'домашка', 'пастор', 'ковер', 'альфа'];
+  const column = ['воршип', 'пастор', 'ковер', 'домашка', 'кофе', 'молитва', 'альфа', 'голубь', 'дом'];
+  const diagonal = ['воршип', 'дом', 'пастор', 'альфа', 'голубь', 'молитва', 'домашка', 'кофе', 'ковер'];
+  const almost = ['воршип', 'кофе', 'библия', 'молодежка', 'семья', 'забота', 'работа', 'домашка', 'голубь'];
+  const state: StoredState = {
+    phase: 'live',
+    revision: 1,
+    called: [],
+    players: [
+      { id: 'almost', name: 'Почти', cells: almost, joinedAt: 1 },
+      { id: 'row', name: 'Ряд', cells: row, joinedAt: 2 },
+      { id: 'column', name: 'Столбец', cells: column, joinedAt: 3 },
+      { id: 'diagonal', name: 'Диагональ', cells: diagonal, joinedAt: 4 },
+    ],
+  };
+  const view = hostView(state, 'https://cards.example/');
+  const byName = new Map(view.players.map((player) => [player.name, player]));
+  assert.deepEqual(byName.get('Ряд')?.lines, ['верхний ряд']);
+  assert.equal(byName.get('Ряд')?.winning[0] && byName.get('Ряд')?.winning[1] && byName.get('Ряд')?.winning[2], true);
+  assert.equal(byName.get('Ряд')?.winning[3], false);
+  assert.deepEqual(byName.get('Столбец')?.lines, ['левый столбец']);
+  assert.deepEqual(byName.get('Диагональ')?.lines, ['диагональ ↘']);
+  assert.equal(byName.get('Почти')?.bingo, false);
+  assert.equal(byName.get('Почти')?.closest, 2);
+  assert.deepEqual(
+    view.players.filter((player) => player.bingo).map((player) => player.name),
+    ['Диагональ', 'Ряд', 'Столбец'],
+  );
+
+  const hidden = hostView({ ...state, phase: 'lobby' }, 'https://cards.example/');
+  assert.equal(hidden.players.every((player) => !player.bingo && player.matchText === ''), true);
 });
 
 test('стол помнит карточку, старт, слово и возврат в набор', () => {
