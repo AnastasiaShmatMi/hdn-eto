@@ -4,8 +4,8 @@ import { ApiError, fetchState, saveCard } from '../api';
 import { Brand } from '../components/Brand';
 import { WordGrid } from '../components/WordGrid';
 import { useFresh } from '../fresh';
-import { normalize, usesBank, validateCard, WORD_BANK } from '../rules';
-import { loadDraft, playerId, saveDraft } from '../storage';
+import { GUEST_WORDS, normalize, usesBank, validateCard, WORD_BANK } from '../rules';
+import { loadDraft, loadRound, playerId, saveDraft, saveRound } from '../storage';
 import type { PublicState } from '../types';
 import { useInterval } from '../useInterval';
 
@@ -42,6 +42,20 @@ export function Guest() {
         setState(next);
         setOffline(false);
         if (next.phase === 'live') setEditing(false);
+        if (typeof next.round === 'number') {
+          const seen = loadRound();
+          if (seen === null) saveRound(next.round);
+          else if (seen !== next.round) {
+            const blank = Array.from({ length: 9 }, () => '');
+            saveRound(next.round);
+            setCells(blank);
+            setSelected(null);
+            setSelectedFrom(null);
+            setFormError('');
+            setEditing(false);
+            remember(name, blank);
+          }
+        }
       }
     } catch {
       setOffline(true);
@@ -50,15 +64,6 @@ export function Guest() {
 
   function remember(nextName: string, nextCells: string[]) {
     saveDraft({ name: nextName, cells: nextCells });
-  }
-
-  function clearBoard() {
-    const next = Array.from({ length: 9 }, () => '');
-    setCells(next);
-    setSelected(null);
-    setSelectedFrom(null);
-    setFormError('');
-    remember(name, next);
   }
 
   function choose(word: string | null) {
@@ -157,7 +162,7 @@ export function Guest() {
           </label>
           <p className="muted">Выбери нужные слова и поставь их в клетки.</p>
           <div className="word-list" aria-label="Список слов">
-            {WORD_BANK.map((word) => {
+            {GUEST_WORDS.map((word) => {
               const used = cells.some((cell) => normalize(cell) === normalize(word));
               const active = !used && selected !== null && normalize(selected) === normalize(word);
               return (
@@ -177,10 +182,7 @@ export function Guest() {
           <Brand />
           <WordGrid cells={cells} onCell={place} />
           {formError && <p className="error" role="alert">{formError}</p>}
-          <div className="row">
-            <button className="primary" type="submit" disabled={saving}>Готово</button>
-            <button type="button" disabled={saving} onClick={clearBoard}>Сбросить поле</button>
-          </div>
+          <button className="primary" type="submit" disabled={saving}>Готово</button>
         </form>
       )}
 

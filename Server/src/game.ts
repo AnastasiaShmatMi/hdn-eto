@@ -28,7 +28,7 @@ export class GameError extends Error {
 const MAX_CARDS = 150;
 
 function emptyState(): StoredState {
-  return { phase: 'lobby', players: [], called: [], revision: 0, template: OFFICIAL_CELLS.slice() };
+  return { phase: 'lobby', players: [], called: [], revision: 0, template: OFFICIAL_CELLS.slice(), round: 0 };
 }
 
 function readTemplate(value: unknown): string[] {
@@ -69,6 +69,9 @@ function sanitize(value: unknown): StoredState {
     called,
     revision: typeof value.revision === 'number' && Number.isFinite(value.revision) ? value.revision : 0,
     template: readTemplate(value.template),
+    round: typeof value.round === 'number' && Number.isFinite(value.round) && value.round >= 0
+      ? Math.floor(value.round)
+      : 0,
   };
 }
 
@@ -170,6 +173,7 @@ export function createGame(file: string) {
         called: [],
         revision: state.revision,
         template: state.template,
+        round: (state.round ?? 0) + 1,
       };
       commit();
     },

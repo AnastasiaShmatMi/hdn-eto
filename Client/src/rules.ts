@@ -5,6 +5,12 @@ export const WORD_BANK = [
   'альфа', 'пастор', 'ковер', 'библия', 'молодежка', 'семья', 'забота', 'работа',
 ];
 
+export const GUEST_WORDS = [
+  'работа', 'кофе', 'библия', 'пастор', 'дом', 'семья',
+  'воршип', 'забота', 'ковер', 'молодежка', 'молитва', 'голубь',
+  'альфа', 'домашка',
+];
+
 export function usesBank(cells: string[]): boolean {
   return cells.length === 9 && cells.every((cell) => (
     WORD_BANK.some((word) => normalize(word) === normalize(cell))

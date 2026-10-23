@@ -21,6 +21,7 @@ export type StoredState = {
   called: StoredCalled[];
   revision: number;
   template?: string[];
+  round?: number;
 };
 
 export type PlayerView = {
@@ -210,6 +211,7 @@ export function publicView(state: StoredState, playerId: string | undefined, joi
     cardCountText: cardCountText(state.players.length),
     joinUrl,
     revision: state.revision,
+    round: state.round ?? 0,
     player,
   };
 }
@@ -222,6 +224,7 @@ export function hostView(state: StoredState, joinUrl: string) {
     cardCountText: cardCountText(state.players.length),
     joinUrl,
     revision: state.revision,
+    round: state.round ?? 0,
     players: presentPlayers(state),
     cloud: wordCloud(state.players, state.called),
     template: activeTemplate(state),

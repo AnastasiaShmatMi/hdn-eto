@@ -1,6 +1,7 @@
 const ID_KEY = 'hdn-player-id';
 const DRAFT_KEY = 'hdn-draft';
 const PIN_KEY = 'hdn-host-pin';
+const ROUND_KEY = 'hdn-round';
 const memory = new Map<string, string>();
 
 function localGet(key: string): string | null {
@@ -48,6 +49,17 @@ export function loadDraft(): { name: string; cells: string[] } {
 
 export function saveDraft(draft: { name: string; cells: string[] }) {
   localSet(DRAFT_KEY, JSON.stringify({ name: draft.name, cells: draft.cells }));
+}
+
+export function loadRound(): number | null {
+  const raw = localGet(ROUND_KEY);
+  if (raw === null || raw === '') return null;
+  const value = Number(raw);
+  return Number.isInteger(value) && value >= 0 ? value : null;
+}
+
+export function saveRound(round: number) {
+  localSet(ROUND_KEY, String(round));
 }
 
 export function loadPin(): string {

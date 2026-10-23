@@ -282,17 +282,17 @@ export function Host() {
                 type="button"
                 className="danger"
                 disabled={busy}
-                onClick={() => void perform(() => hostAction(pin, '/api/host/reset'), 'Стол пустой.')}
+                onClick={() => void perform(() => hostAction(pin, '/api/host/reset'), 'Игра завершена.')}
               >
-                Да, сбросить
+                Да, завершить
               </button>
               <button type="button" onClick={() => setArmReset(false)}>Отмена</button>
             </>
           ) : (
-            <button type="button" onClick={() => setArmReset(true)}>Сбросить стол</button>
+            <button type="button" onClick={() => setArmReset(true)}>Завершить игру</button>
           )}
         </div>
-        {armReset && <p className="muted">Сбросить стол? Карточки удалятся, правильный вариант останется.</p>}
+        {armReset && <p className="muted">Завершить игру? У всех очистятся клетки. Правильный вариант останется.</p>}
         {state.cardCount === 0 && state.phase === 'lobby' && (
           <p className="muted">Сначала пусть гости сохранят карточки.</p>
         )}

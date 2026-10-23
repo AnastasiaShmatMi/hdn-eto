@@ -26,6 +26,7 @@ export type PublicState = {
   cardCountText: string;
   joinUrl: string;
   revision: number;
+  round?: number;
   player: PlayerView | null;
 };
 
@@ -42,6 +43,7 @@ export type HostState = {
   cardCountText: string;
   joinUrl: string;
   revision: number;
+  round?: number;
   players: PlayerView[];
   cloud: CloudWord[];
   template?: string[];
