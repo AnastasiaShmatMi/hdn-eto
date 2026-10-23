@@ -5,9 +5,7 @@ import {
   calledOnCards,
   countCardsWith,
   hostView,
-  isOfficialOrder,
   normalize,
-  OFFICIAL_CELLS,
   publicView,
   validateCard,
   type StoredCalled,
@@ -117,10 +115,6 @@ export function createGame(file: string) {
       }
       const checked = validateCard(record.name, record.cells);
       if (!checked.ok) throw new GameError(400, checked.error);
-      if (!isOfficialOrder(checked.cells)) {
-        throw new GameError(400, 'Расставь слова в правильном порядке.');
-      }
-      checked.cells = OFFICIAL_CELLS.slice();
       const existing = state.players.find((player) => player.id === id);
       if (!existing && state.players.length >= MAX_CARDS) {
         throw new GameError(400, 'Больше 150 карточек стол не принимает.');

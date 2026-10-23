@@ -32,6 +32,9 @@ export type PlayerView = {
   lines: string[];
   bingo: boolean;
   closest: number;
+  templateMarks: boolean[];
+  matchCount: number;
+  matchText: string;
 };
 
 export type CloudWord = {
@@ -71,6 +74,15 @@ export const OFFICIAL_CELLS = [
 export function isOfficialOrder(cells: string[]): boolean {
   return cells.length === OFFICIAL_CELLS.length
     && cells.every((cell, index) => normalize(cell) === normalize(OFFICIAL_CELLS[index]));
+}
+
+export function matchTemplate(cells: string[]): { templateMarks: boolean[]; matchCount: number; matchText: string } {
+  const templateMarks = OFFICIAL_CELLS.map((word, index) => normalize(cells[index] ?? '') === normalize(word));
+  const matchCount = templateMarks.filter(Boolean).length;
+  let matchText = 'Ничего не совпало.';
+  if (matchCount === OFFICIAL_CELLS.length) matchText = 'Всё совпало.';
+  else if (matchCount > 0) matchText = `Совпало ${matchCount} из 9.`;
+  return { templateMarks, matchCount, matchText };
 }
 
 export function cardCountText(count: number): string {
@@ -215,8 +227,12 @@ function withDisplayNames(players: StoredPlayer[]): Array<StoredPlayer & { displ
 
 function presentPlayers(state: StoredState): PlayerView[] {
   const calledTexts = state.called.map((item) => item.text);
+  const reveal = state.phase === 'live';
   const views = withDisplayNames(state.players).map((player) => {
     const score = evaluate(player.cells, calledTexts);
+    const template = reveal
+      ? matchTemplate(player.cells)
+      : { templateMarks: Array.from({ length: 9 }, () => false), matchCount: 0, matchText: '' };
     return {
       id: player.id,
       name: player.name,
@@ -227,9 +243,13 @@ function presentPlayers(state: StoredState): PlayerView[] {
       lines: score.lines,
       bingo: score.bingo,
       closest: score.closest,
+      templateMarks: template.templateMarks,
+      matchCount: template.matchCount,
+      matchText: template.matchText,
     };
   });
   views.sort((a, b) => {
+    if (a.matchCount !== b.matchCount) return b.matchCount - a.matchCount;
     if (a.bingo !== b.bingo) return a.bingo ? -1 : 1;
     if (a.closest !== b.closest) return b.closest - a.closest;
     return a.displayName.localeCompare(b.displayName, 'ru', { numeric: true });

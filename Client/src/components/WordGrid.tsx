@@ -4,6 +4,7 @@ type Props = {
   cells: string[];
   marks?: boolean[];
   winning?: boolean[];
+  correct?: boolean[];
   editing?: boolean;
   inputRefs?: MutableRefObject<(HTMLInputElement | null)[]>;
   onChange?: (index: number, value: string) => void;
@@ -12,9 +13,10 @@ type Props = {
   onCell?: (index: number) => void;
 };
 
-function cellClass(marked: boolean, winning: boolean): string {
+function cellClass(marked: boolean, winning: boolean, correct: boolean): string {
   if (winning) return 'cell winning';
   if (marked) return 'cell marked';
+  if (correct) return 'cell correct';
   return 'cell';
 }
 
@@ -22,6 +24,7 @@ export function WordGrid({
   cells,
   marks,
   winning,
+  correct,
   editing = false,
   inputRefs,
   onChange,
@@ -34,7 +37,8 @@ export function WordGrid({
       {cells.map((cell, index) => {
         const marked = Boolean(marks?.[index]);
         const won = Boolean(winning?.[index]);
-        const className = cellClass(marked, won);
+        const hit = Boolean(correct?.[index]);
+        const className = cellClass(marked, won, hit);
         if (editing) {
           return (
             <input

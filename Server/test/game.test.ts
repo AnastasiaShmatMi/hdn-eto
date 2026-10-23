@@ -176,11 +176,13 @@ test('стол помнит карточку, старт, слово и возв
     const game = createGame(file);
     const id = '11111111-1111-4111-8111-111111111111';
     const cells = OFFICIAL_CELLS.slice();
-    const wrong = cells.slice();
-    [wrong[4], wrong[5]] = [wrong[5], wrong[4]];
-    assert.throws(() => game.saveCard({ id, name: 'Аня', cells: wrong }), /правильном порядке/);
+    [cells[4], cells[5]] = [cells[5], cells[4]];
     assert.throws(() => game.start(), /Сначала нужна хотя бы одна карточка/);
     game.saveCard({ id, name: 'Аня', cells });
+    const hidden = game.publicState(id);
+    assert.equal(hidden.phase, 'lobby');
+    assert.equal(hidden.player?.matchText, '');
+    assert.equal(hidden.player?.matchCount, 0);
     game.start();
     assert.throws(() => game.start(), /Игра уже идёт/);
     assert.throws(() => game.saveCard({ id, name: 'Аня', cells }), /Набор закрыт/);
@@ -191,7 +193,10 @@ test('стол помнит карточку, старт, слово и возв
     assert.equal(live.phase, 'live');
     assert.equal(live.called.at(-1)?.text, 'воршип!');
     assert.equal(live.player?.marks[0], true);
-    assert.equal(live.player?.cells[4], 'дом');
+    assert.equal(live.player?.matchText, 'Совпало 7 из 9.');
+    assert.equal(live.player?.templateMarks[0], true);
+    assert.equal(live.player?.templateMarks[4], false);
+    assert.equal(live.player?.templateMarks[5], false);
     assert.throws(() => game.call('Воршип'), /уже звучало/);
     game.toLobby();
     const lobby = game.publicState(id);

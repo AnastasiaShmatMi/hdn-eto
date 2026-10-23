@@ -361,6 +361,7 @@ export function Host() {
                     <button type="button" onClick={() => setArmDelete(player.id)}>Удалить</button>
                   )}
                 </div>
+                {state.phase === 'live' && player.matchText && <p className="ok">{player.matchText}</p>}
                 {player.bingo && <p className="bingo-word">БИНГО</p>}
                 {player.bingo && <p>Линия сложилась: {player.lines.join(', ')}</p>}
                 {!player.bingo && player.closest === 2 && <p className="almost">Почти</p>}
@@ -368,6 +369,7 @@ export function Host() {
                   cells={player.cells}
                   marks={player.marks}
                   winning={player.winning}
+                  correct={state.phase === 'live' ? player.templateMarks : undefined}
                   onCell={state.phase === 'live' ? (index) => void speak(player.cells[index], false) : undefined}
                 />
               </article>

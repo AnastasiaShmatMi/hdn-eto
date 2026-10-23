@@ -14,6 +14,9 @@ export type PlayerView = {
   lines: string[];
   bingo: boolean;
   closest: number;
+  templateMarks?: boolean[];
+  matchCount?: number;
+  matchText?: string;
 };
 
 export type PublicState = {
