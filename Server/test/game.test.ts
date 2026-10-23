@@ -178,6 +178,10 @@ test('стол помнит карточку, старт, слово и возв
     const cells = OFFICIAL_CELLS.slice();
     [cells[4], cells[5]] = [cells[5], cells[4]];
     assert.throws(() => game.start(), /Сначала нужна хотя бы одна карточка/);
+    assert.throws(
+      () => game.saveCard({ id, name: 'Аня', cells: ['а', 'б', 'в', 'г', 'д', 'е', 'ж', 'з', 'и'] }),
+      /списка/,
+    );
     game.saveCard({ id, name: 'Аня', cells });
     const hidden = game.publicState(id);
     assert.equal(hidden.phase, 'lobby');

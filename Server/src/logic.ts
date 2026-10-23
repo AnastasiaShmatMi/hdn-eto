@@ -76,6 +76,17 @@ export function isOfficialOrder(cells: string[]): boolean {
     && cells.every((cell, index) => normalize(cell) === normalize(OFFICIAL_CELLS[index]));
 }
 
+export function usesOfficialWords(cells: string[]): boolean {
+  if (cells.length !== OFFICIAL_CELLS.length) return false;
+  const need = OFFICIAL_CELLS.map((word) => normalize(word)).sort();
+  const got = cells.map((word) => normalize(word)).sort();
+  return need.every((word, index) => word === got[index]);
+}
+
+export function spellOfficial(cells: string[]): string[] {
+  return cells.map((cell) => OFFICIAL_CELLS.find((word) => normalize(word) === normalize(cell)) ?? cell);
+}
+
 export function matchTemplate(cells: string[]): { templateMarks: boolean[]; matchCount: number; matchText: string } {
   const templateMarks = OFFICIAL_CELLS.map((word, index) => normalize(cells[index] ?? '') === normalize(word));
   const matchCount = templateMarks.filter(Boolean).length;

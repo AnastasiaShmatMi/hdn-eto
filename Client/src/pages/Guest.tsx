@@ -1,25 +1,38 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ApiError, fetchState, saveCard } from '../api';
 import { Brand } from '../components/Brand';
 import { WordGrid } from '../components/WordGrid';
 import { useFresh } from '../fresh';
-import { validateCard } from '../rules';
+import { normalize, usesBank, validateCard, WORD_BANK } from '../rules';
 import { loadDraft, playerId, saveDraft } from '../storage';
 import type { PublicState } from '../types';
 import { useInterval } from '../useInterval';
+
+function keptBank(raw: string[]): string[] {
+  const next = Array.from({ length: 9 }, () => '');
+  const used = new Set<string>();
+  raw.slice(0, 9).forEach((cell, index) => {
+    const match = WORD_BANK.find((word) => normalize(word) === normalize(cell));
+    if (!match || used.has(normalize(match))) return;
+    used.add(normalize(match));
+    next[index] = match;
+  });
+  return next;
+}
 
 export function Guest() {
   const id = useMemo(() => playerId(), []);
   const initial = useMemo(() => loadDraft(), []);
   const [name, setName] = useState(initial.name);
-  const [cells, setCells] = useState(initial.cells);
+  const [cells, setCells] = useState(() => keptBank(initial.cells));
   const [state, setState] = useState<PublicState | null>(null);
   const [offline, setOffline] = useState(false);
   const [editing, setEditing] = useState(false);
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
-  const inputs = useRef<(HTMLInputElement | null)[]>([]);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [selectedFrom, setSelectedFrom] = useState<number | null>(null);
   const accept = useFresh();
 
   useInterval(async () => {
@@ -39,25 +52,39 @@ export function Guest() {
     saveDraft({ name: nextName, cells: nextCells });
   }
 
-  function onPaste(index: number, text: string) {
-    if (!/[\n\r\t]/.test(text)) return false;
-    const parts = text.split(/[\n\r\t]+/).map((part) => part.trim()).filter((part) => part.length > 0);
+  function choose(word: string | null) {
+    setSelected(word);
+    setSelectedFrom(null);
+  }
+
+  function place(index: number) {
     const next = cells.slice();
-    parts.forEach((part, offset) => {
-      const target = index + offset;
-      if (target < 9) next[target] = [...part].slice(0, 40).join('');
-    });
+    if (!selected) {
+      if (!next[index]) return;
+      setSelected(WORD_BANK.find((word) => normalize(word) === normalize(next[index])) ?? next[index]);
+      setSelectedFrom(index);
+      next[index] = '';
+    } else {
+      const word = WORD_BANK.find((item) => normalize(item) === normalize(selected)) ?? selected;
+      const displaced = next[index];
+      next[index] = word;
+      if (selectedFrom !== null && selectedFrom !== index) next[selectedFrom] = displaced;
+      setSelected(null);
+      setSelectedFrom(null);
+    }
     setCells(next);
     remember(name, next);
-    const focusAt = Math.min(8, index + Math.max(parts.length, 1));
-    requestAnimationFrame(() => inputs.current[focusAt]?.focus());
-    return true;
+    setFormError('');
   }
 
   async function submit() {
     const checked = validateCard(name, cells);
     if (!checked.ok) {
       setFormError(checked.error);
+      return;
+    }
+    if (!usesBank(checked.cells)) {
+      setFormError('Поставь все слова из списка.');
       return;
     }
     setSaving(true);
@@ -67,6 +94,8 @@ export function Guest() {
       if (accept(saved.state)) setState(saved.state);
       setName(checked.name);
       setCells(checked.cells);
+      setSelected(null);
+      setSelectedFrom(null);
       remember(checked.name, checked.cells);
       setEditing(false);
       setOffline(false);
@@ -115,30 +144,33 @@ export function Guest() {
                 setName(event.target.value);
                 remember(event.target.value, cells);
               }}
-              onKeyDown={(event) => {
-                if (event.key !== 'Enter') return;
-                event.preventDefault();
-                inputs.current[0]?.focus();
-              }}
             />
           </label>
+          <p className="muted">Нажми слово, потом клетку.</p>
+          <div className="sheets">
+            {[0, 1].map((copy) => (
+              <div className="sheet" key={copy} aria-label="Список слов">
+                {WORD_BANK.map((word) => {
+                  const used = cells.some((cell) => normalize(cell) === normalize(word));
+                  const active = !used && selected !== null && normalize(selected) === normalize(word);
+                  return (
+                    <button
+                      key={word}
+                      type="button"
+                      className={used ? 'pick used' : active ? 'pick selected' : 'pick'}
+                      aria-pressed={active}
+                      disabled={used}
+                      onClick={() => choose(active ? null : word)}
+                    >
+                      {word}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
           <Brand />
-          <WordGrid
-            cells={cells}
-            editing
-            inputRefs={inputs}
-            onChange={(index, value) => {
-              const next = cells.slice();
-              next[index] = value;
-              setCells(next);
-              remember(name, next);
-            }}
-            onPaste={onPaste}
-            onEnter={(index) => {
-              if (index < 8) inputs.current[index + 1]?.focus();
-              else void submit();
-            }}
-          />
+          <WordGrid cells={cells} onCell={place} />
           {formError && <p className="error" role="alert">{formError}</p>}
           <button className="primary" type="submit" disabled={saving}>Готово</button>
         </form>
@@ -147,7 +179,7 @@ export function Guest() {
       {showAccepted && player && (
         <section className="stack">
           <p className="ok">Карточка принята</p>
-          <p className="muted">Слова можно поправить, пока ведущий не начал.</p>
+          <p className="muted">Порядок можно поправить, пока ведущий не начал.</p>
           <p className="who">{player.name}</p>
           <Brand />
           <WordGrid cells={player.cells} />
@@ -155,13 +187,15 @@ export function Guest() {
             type="button"
             onClick={() => {
               setName(player.name);
-              setCells([...player.cells]);
+              setCells(keptBank(player.cells));
               remember(player.name, player.cells);
               setFormError('');
+              setSelected(null);
+              setSelectedFrom(null);
               setEditing(true);
             }}
           >
-            Изменить слова
+            Поправить порядок
           </button>
         </section>
       )}
