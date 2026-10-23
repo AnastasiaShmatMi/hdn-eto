@@ -10,6 +10,7 @@ import {
   evaluate,
   hostView,
   normalize,
+  OFFICIAL_CELLS,
   validateCard,
   type StoredState,
 } from '../src/logic';
@@ -174,20 +175,24 @@ test('стол помнит карточку, старт, слово и возв
   try {
     const game = createGame(file);
     const id = '11111111-1111-4111-8111-111111111111';
-    const cells = ['Ёлка', 'река', 'мост', 'дом', 'кот', 'сад', 'луна', 'хлеб', 'чай'];
+    const cells = OFFICIAL_CELLS.slice();
+    const wrong = cells.slice();
+    [wrong[4], wrong[5]] = [wrong[5], wrong[4]];
+    assert.throws(() => game.saveCard({ id, name: 'Аня', cells: wrong }), /правильном порядке/);
     assert.throws(() => game.start(), /Сначала нужна хотя бы одна карточка/);
     game.saveCard({ id, name: 'Аня', cells });
     game.start();
     assert.throws(() => game.start(), /Игра уже идёт/);
     assert.throws(() => game.saveCard({ id, name: 'Аня', cells }), /Набор закрыт/);
-    const called = game.call('елка!');
+    const called = game.call('воршип!');
     assert.equal(called.count, 1);
     assert.equal(called.message, 'Есть на 1 карточке.');
     const live = game.publicState(id);
     assert.equal(live.phase, 'live');
-    assert.equal(live.called.at(-1)?.text, 'елка!');
+    assert.equal(live.called.at(-1)?.text, 'воршип!');
     assert.equal(live.player?.marks[0], true);
-    assert.throws(() => game.call('Ёлка'), /уже звучало/);
+    assert.equal(live.player?.cells[4], 'дом');
+    assert.throws(() => game.call('Воршип'), /уже звучало/);
     game.toLobby();
     const lobby = game.publicState(id);
     assert.equal(lobby.phase, 'lobby');
@@ -210,25 +215,25 @@ test('не больше 150 карточек, сброс и отмена сло�
       game.saveCard({
         id: `player-${index.toString().padStart(3, '0')}-ok`,
         name: 'Гость',
-        cells: Array.from({ length: 9 }, (_, cell) => `с${index}к${cell}`),
+        cells: OFFICIAL_CELLS.slice(),
       });
     }
     assert.throws(
       () => game.saveCard({
         id: 'player-extra-ok',
         name: 'Лишний',
-        cells: Array.from({ length: 9 }, (_, cell) => `лишний${cell}`),
+        cells: OFFICIAL_CELLS.slice(),
       }),
       /150/,
     );
     game.saveCard({
       id: 'player-000-ok',
       name: 'Гость',
-      cells: Array.from({ length: 9 }, (_, cell) => `замена${cell}`),
+      cells: OFFICIAL_CELLS.slice(),
     });
     assert.equal(game.publicState().cardCount, 150);
     game.start();
-    game.call('замена0');
+    game.call('воршип');
     game.undo();
     assert.equal(game.publicState().called.length, 0);
     assert.throws(() => game.undo(), /Нечего отменять/);

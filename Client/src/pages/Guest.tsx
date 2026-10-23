@@ -1,25 +1,37 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ApiError, fetchState, saveCard } from '../api';
 import { Brand } from '../components/Brand';
 import { WordGrid } from '../components/WordGrid';
 import { useFresh } from '../fresh';
-import { validateCard } from '../rules';
+import { isOfficialOrder, normalize, OFFICIAL_CELLS, validateCard, WORD_BANK } from '../rules';
 import { loadDraft, playerId, saveDraft } from '../storage';
 import type { PublicState } from '../types';
 import { useInterval } from '../useInterval';
+
+function keptBank(raw: string[]): string[] {
+  const next = Array.from({ length: 9 }, () => '');
+  const used = new Set<string>();
+  raw.slice(0, 9).forEach((cell, index) => {
+    const match = WORD_BANK.find((word) => normalize(word) === normalize(cell));
+    if (!match || used.has(normalize(match))) return;
+    used.add(normalize(match));
+    next[index] = match;
+  });
+  return next;
+}
 
 export function Guest() {
   const id = useMemo(() => playerId(), []);
   const initial = useMemo(() => loadDraft(), []);
   const [name, setName] = useState(initial.name);
-  const [cells, setCells] = useState(initial.cells);
+  const [cells, setCells] = useState(() => keptBank(initial.cells));
   const [state, setState] = useState<PublicState | null>(null);
   const [offline, setOffline] = useState(false);
   const [editing, setEditing] = useState(false);
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
-  const inputs = useRef<(HTMLInputElement | null)[]>([]);
+  const [selected, setSelected] = useState<string | null>(null);
   const accept = useFresh();
 
   useInterval(async () => {
@@ -39,19 +51,26 @@ export function Guest() {
     saveDraft({ name: nextName, cells: nextCells });
   }
 
-  function onPaste(index: number, text: string) {
-    if (!/[\n\r\t]/.test(text)) return false;
-    const parts = text.split(/[\n\r\t]+/).map((part) => part.trim()).filter((part) => part.length > 0);
+  function canonical(word: string): string {
+    return WORD_BANK.find((item) => normalize(item) === normalize(word)) ?? word;
+  }
+
+  function place(index: number) {
     const next = cells.slice();
-    parts.forEach((part, offset) => {
-      const target = index + offset;
-      if (target < 9) next[target] = [...part].slice(0, 40).join('');
-    });
+    if (!selected) {
+      if (!next[index]) return;
+      setSelected(canonical(next[index]));
+      next[index] = '';
+    } else {
+      const from = next.findIndex((cell) => normalize(cell) === normalize(selected));
+      const displaced = next[index];
+      next[index] = canonical(selected);
+      if (from >= 0) next[from] = displaced;
+      setSelected(null);
+    }
     setCells(next);
     remember(name, next);
-    const focusAt = Math.min(8, index + Math.max(parts.length, 1));
-    requestAnimationFrame(() => inputs.current[focusAt]?.focus());
-    return true;
+    setFormError('');
   }
 
   async function submit() {
@@ -60,14 +79,19 @@ export function Guest() {
       setFormError(checked.error);
       return;
     }
+    if (!isOfficialOrder(checked.cells)) {
+      setFormError('Расставь слова в правильном порядке.');
+      return;
+    }
     setSaving(true);
     setFormError('');
     try {
       const saved = await saveCard({ id, name: checked.name, cells: checked.cells });
       if (accept(saved.state)) setState(saved.state);
       setName(checked.name);
-      setCells(checked.cells);
-      remember(checked.name, checked.cells);
+      setCells(OFFICIAL_CELLS.slice());
+      setSelected(null);
+      remember(checked.name, OFFICIAL_CELLS);
       setEditing(false);
       setOffline(false);
     } catch (error) {
@@ -115,30 +139,29 @@ export function Guest() {
                 setName(event.target.value);
                 remember(event.target.value, cells);
               }}
-              onKeyDown={(event) => {
-                if (event.key !== 'Enter') return;
-                event.preventDefault();
-                inputs.current[0]?.focus();
-              }}
             />
           </label>
           <Brand />
-          <WordGrid
-            cells={cells}
-            editing
-            inputRefs={inputs}
-            onChange={(index, value) => {
-              const next = cells.slice();
-              next[index] = value;
-              setCells(next);
-              remember(name, next);
-            }}
-            onPaste={onPaste}
-            onEnter={(index) => {
-              if (index < 8) inputs.current[index + 1]?.focus();
-              else void submit();
-            }}
-          />
+          <p className="muted">Нажми слово, потом клетку.</p>
+          <WordGrid cells={cells} onCell={place} />
+          <div className="bank" aria-label="Список слов">
+            {WORD_BANK.map((word) => {
+              const used = cells.some((cell) => normalize(cell) === normalize(word));
+              if (used) return null;
+              const active = selected !== null && normalize(selected) === normalize(word);
+              return (
+                <button
+                  key={word}
+                  type="button"
+                  className={active ? 'chip selected' : 'chip'}
+                  aria-pressed={active}
+                  onClick={() => setSelected(active ? null : word)}
+                >
+                  {word}
+                </button>
+              );
+            })}
+          </div>
           {formError && <p className="error" role="alert">{formError}</p>}
           <button className="primary" type="submit" disabled={saving}>Готово</button>
         </form>
@@ -158,10 +181,11 @@ export function Guest() {
               setCells([...player.cells]);
               remember(player.name, player.cells);
               setFormError('');
+              setSelected(null);
               setEditing(true);
             }}
           >
-            Изменить слова
+            Поправить порядок
           </button>
         </section>
       )}

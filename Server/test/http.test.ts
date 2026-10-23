@@ -5,6 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { createGame } from '../src/game';
 import { listen } from '../src/http';
+import { OFFICIAL_CELLS } from '../src/logic';
 
 test('запросы: карточка, старт, слово, публичное состояние, набор', async () => {
   const previous = {
@@ -23,7 +24,7 @@ test('запросы: карточка, старт, слово, публично
   const port = typeof address === 'object' && address ? address.port : 0;
   const base = `http://127.0.0.1:${port}`;
   const id = '22222222-2222-4222-8222-222222222222';
-  const cells = ['Ёлка', 'река', 'мост', 'дом', 'кот', 'сад', 'луна', 'хлеб', 'чай'];
+  const cells = OFFICIAL_CELLS.slice();
 
   try {
     const saved = await fetch(`${base}/api/card`, {
@@ -39,7 +40,7 @@ test('запросы: карточка, старт, слово, публично
     assert.equal(lobby.phase, 'lobby');
     assert.equal(lobby.cardCount, 1);
     assert.equal(lobby.joinUrl, 'https://cards.example/');
-    assert.equal(lobby.player.cells[0], 'Ёлка');
+    assert.equal(lobby.player.cells[0], 'воршип');
 
     const denied = await fetch(`${base}/api/host/start`, { method: 'POST' });
     assert.equal(denied.status, 401);
@@ -62,7 +63,7 @@ test('запросы: карточка, старт, слово, публично
     const called = await fetch(`${base}/api/host/call`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-host-pin': 'test-pin' },
-      body: JSON.stringify({ text: 'елка!' }),
+      body: JSON.stringify({ text: 'воршип!' }),
     });
     const calledBody = await called.json() as { count: number; message: string };
     assert.equal(called.status, 200);
@@ -76,7 +77,7 @@ test('запросы: карточка, старт, слово, публично
       player: { marks: boolean[]; bingo: boolean };
     };
     assert.equal(live.phase, 'live');
-    assert.equal(live.called.at(-1)?.text, 'елка!');
+    assert.equal(live.called.at(-1)?.text, 'воршип!');
     assert.equal(live.player.marks[0], true);
     assert.equal(live.player.bingo, false);
 

@@ -62,6 +62,17 @@ export function normalize(value: string): string {
     .trim();
 }
 
+export const OFFICIAL_CELLS = [
+  'воршип', 'кофе', 'молитва',
+  'домашка', 'дом', 'голубь',
+  'альфа', 'пастор', 'ковер',
+];
+
+export function isOfficialOrder(cells: string[]): boolean {
+  return cells.length === OFFICIAL_CELLS.length
+    && cells.every((cell, index) => normalize(cell) === normalize(OFFICIAL_CELLS[index]));
+}
+
 export function cardCountText(count: number): string {
   return `${count} ${plural(count, 'карточка', 'карточки', 'карточек')}`;
 }

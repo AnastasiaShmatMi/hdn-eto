@@ -201,6 +201,20 @@ a { color: #a13d6c; font-weight: 800; }
 }
 
 .board button.cell { cursor: pointer; }
+.board button.cell.empty { background: rgba(255, 255, 255, 0.42); }
+
+.bank { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.84);
+  color: #2c2230;
+  padding: 8px 14px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.chip.selected { box-shadow: inset 0 0 0 2px #b23d72; background: rgba(255, 214, 230, 0.95); }
 .board button.cell:disabled { cursor: default; opacity: 1; }
 .board .cell.marked { background: rgba(255, 186, 214, 0.72); box-shadow: inset 0 0 0 2px rgba(214, 104, 156, 0.35); }
 .board .cell.winning {

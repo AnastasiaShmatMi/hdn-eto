@@ -69,7 +69,8 @@ export function WordGrid({
             <button
               key={index}
               type="button"
-              className={className}
+              className={cell ? className : `${className} empty`}
+              aria-label={cell ? `Клетка ${index + 1}: ${cell}` : `Клетка ${index + 1}`}
               disabled={marked}
               onClick={() => onCell(index)}
             >

@@ -1,5 +1,22 @@
 const LIGHT_PUNCTUATION = /[.,?!;:…()[\]{}«»„“”‚‘’"'`‹›\-–—―/\\]/g;
 
+export const WORD_BANK = [
+  'воршип', 'кофе', 'молитва',
+  'домашка', 'голубь', 'дом',
+  'альфа', 'пастор', 'ковер',
+];
+
+export const OFFICIAL_CELLS = [
+  'воршип', 'кофе', 'молитва',
+  'домашка', 'дом', 'голубь',
+  'альфа', 'пастор', 'ковер',
+];
+
+export function isOfficialOrder(cells: string[]): boolean {
+  return cells.length === OFFICIAL_CELLS.length
+    && cells.every((cell, index) => normalize(cell) === normalize(OFFICIAL_CELLS[index]));
+}
+
 export function normalize(value: string): string {
   return value
     .trim()
