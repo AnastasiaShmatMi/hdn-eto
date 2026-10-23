@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+.env.*
+Server/data/game.json
+Server/data/*.tmp
+*.log
+.DS_Store
