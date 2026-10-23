@@ -1,6 +1,6 @@
 const LIGHT_PUNCTUATION = /[.,?!;:…()[\]{}«»„“”‚‘’"'`‹›\-–—―/\\]/g;
 
-export type Phase = 'lobby' | 'live';
+export type Phase = 'lobby' | 'live' | 'done';
 
 export type StoredPlayer = {
   id: string;
@@ -212,6 +212,7 @@ export function publicView(state: StoredState, playerId: string | undefined, joi
     joinUrl,
     revision: state.revision,
     round: state.round ?? 0,
+    ...(state.phase === 'done' ? { template: activeTemplate(state) } : {}),
     player,
   };
 }
@@ -262,7 +263,7 @@ function withDisplayNames(players: StoredPlayer[]): Array<StoredPlayer & { displ
 
 function presentPlayers(state: StoredState): PlayerView[] {
   const calledTexts = state.called.map((item) => item.text);
-  const reveal = state.phase === 'live';
+  const reveal = state.phase !== 'lobby';
   const views = withDisplayNames(state.players).map((player) => {
     const template = reveal
       ? matchTemplate(player.cells, activeTemplate(state))

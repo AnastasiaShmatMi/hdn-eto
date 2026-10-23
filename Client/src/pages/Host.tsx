@@ -203,7 +203,9 @@ export function Host() {
     );
   }
 
-  const bingoPlayers = state.phase === 'live' ? state.players.filter((player) => player.bingo) : [];
+  const revealed = state.phase !== 'lobby';
+  const bingoPlayers = revealed ? state.players.filter((player) => player.bingo) : [];
+  const phaseText = state.phase === 'live' ? 'Игра идёт' : state.phase === 'done' ? 'Игра завершена' : 'Набор карточек';
   const shown = state.players.filter((player) => {
     if (filter === 'bingo') return player.bingo;
     if (filter === 'close') return !player.bingo && player.closest === 2;
@@ -217,7 +219,7 @@ export function Host() {
         <Brand size="md" />
         <a className="quiet" href="/screen" target="_blank" rel="noreferrer">Экран</a>
       </header>
-      <p className="phase">{state.phase === 'live' ? 'Игра идёт' : 'Набор карточек'}</p>
+      <p className="phase">{phaseText}</p>
       {offline && <p className="banner">Связь прервалась.</p>}
 
       {state.template && state.template.length === 9 && (
@@ -271,10 +273,17 @@ export function Host() {
           <button
             type="button"
             className="primary"
-            disabled={busy || state.phase === 'live' || state.cardCount === 0}
+            disabled={busy || state.phase !== 'lobby' || state.cardCount === 0}
             onClick={() => void perform(() => hostAction(pin, '/api/host/start'), 'Игра началась.')}
           >
             Начать игру
+          </button>
+          <button
+            type="button"
+            disabled={busy || state.phase !== 'live'}
+            onClick={() => void perform(() => hostAction(pin, '/api/host/finish'), 'Правильный вариант на экране.')}
+          >
+            Завершить игру
           </button>
           {armReset ? (
             <>
@@ -282,17 +291,17 @@ export function Host() {
                 type="button"
                 className="danger"
                 disabled={busy}
-                onClick={() => void perform(() => hostAction(pin, '/api/host/reset'), 'Игра завершена.')}
+                onClick={() => void perform(() => hostAction(pin, '/api/host/reset'), 'Игра сброшена.')}
               >
-                Да, завершить
+                Да, сбросить
               </button>
               <button type="button" onClick={() => setArmReset(false)}>Отмена</button>
             </>
           ) : (
-            <button type="button" onClick={() => setArmReset(true)}>Завершить игру</button>
+            <button type="button" onClick={() => setArmReset(true)}>Сбросить игру</button>
           )}
         </div>
-        {armReset && <p className="muted">Завершить игру? У всех очистятся клетки. Правильный вариант останется.</p>}
+        {armReset && <p className="muted">Сбросить игру? У всех очистятся клетки. Правильный вариант останется.</p>}
         {state.cardCount === 0 && state.phase === 'lobby' && (
           <p className="muted">Сначала пусть гости сохранят карточки.</p>
         )}
@@ -303,7 +312,7 @@ export function Host() {
         )}
       </section>
 
-      {state.phase === 'live' && (
+      {revealed && (
         <section className="panel stack">
           <h2>Бинго</h2>
           {bingoPlayers.length === 0 ? (
@@ -357,7 +366,7 @@ export function Host() {
                     <button type="button" onClick={() => setArmDelete(player.id)}>Удалить</button>
                   )}
                 </div>
-                {state.phase === 'live' && player.matchText && <p className="ok">{player.matchText}</p>}
+                {revealed && player.matchText && <p className="ok">{player.matchText}</p>}
                 {player.bingo && <p className="bingo-word">БИНГО</p>}
                 {player.bingo && <p>Линия сложилась: {player.lines.join(', ')}</p>}
                 {!player.bingo && player.closest === 2 && <p className="almost">Почти</p>}
@@ -365,7 +374,7 @@ export function Host() {
                   cells={player.cells}
                   marks={player.marks}
                   winning={player.winning}
-                  correct={state.phase === 'live' ? player.templateMarks : undefined}
+                  correct={revealed ? player.templateMarks : undefined}
                 />
               </article>
             ))}

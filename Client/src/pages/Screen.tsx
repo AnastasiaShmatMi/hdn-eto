@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { fetchState } from '../api';
 import { Brand } from '../components/Brand';
 import { QrCode } from '../components/QrCode';
+import { WordGrid } from '../components/WordGrid';
 import { useFresh } from '../fresh';
 import type { PublicState } from '../types';
 import { useInterval } from '../useInterval';
@@ -58,6 +59,12 @@ export function Screen() {
             </div>
           )}
         </>
+      )}
+      {state?.phase === 'done' && state.template && state.template.length === 9 && (
+        <section className="screen-answer">
+          <h1 className="screen-started">Правильный вариант</h1>
+          <WordGrid cells={state.template} />
+        </section>
       )}
     </main>
   );

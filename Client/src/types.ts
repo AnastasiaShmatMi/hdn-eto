@@ -20,13 +20,14 @@ export type PlayerView = {
 };
 
 export type PublicState = {
-  phase: 'lobby' | 'live';
+  phase: 'lobby' | 'live' | 'done';
   called: CalledWord[];
   cardCount: number;
   cardCountText: string;
   joinUrl: string;
   revision: number;
   round?: number;
+  template?: string[];
   player: PlayerView | null;
 };
 
@@ -37,7 +38,7 @@ export type CloudWord = {
 };
 
 export type HostState = {
-  phase: 'lobby' | 'live';
+  phase: 'lobby' | 'live' | 'done';
   called: CalledWord[];
   cardCount: number;
   cardCountText: string;

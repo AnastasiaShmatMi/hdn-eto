@@ -134,6 +134,11 @@ export async function handle(req: IncomingMessage, res: ServerResponse, game: Ga
         send(res, 200, { ok: true, state: game.hostState() }, cors);
         return;
       }
+      if (method === 'POST' && path === '/api/host/finish') {
+        game.finish();
+        send(res, 200, { ok: true, state: game.hostState() }, cors);
+        return;
+      }
       if (method === 'POST' && path === '/api/host/lobby') {
         game.toLobby();
         send(res, 200, { ok: true, state: game.hostState() }, cors);

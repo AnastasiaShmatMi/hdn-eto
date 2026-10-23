@@ -41,7 +41,7 @@ export function Guest() {
       if (accept(next)) {
         setState(next);
         setOffline(false);
-        if (next.phase === 'live') setEditing(false);
+        if (next.phase !== 'lobby') setEditing(false);
         if (typeof next.round === 'number') {
           const seen = loadRound();
           if (seen === null) saveRound(next.round);
@@ -121,21 +121,38 @@ export function Guest() {
   }
 
   const player = state?.player ?? null;
+  const playing = state?.phase === 'live' || state?.phase === 'done';
   const showForm = state?.phase === 'lobby' && (!player || editing);
   const showAccepted = state?.phase === 'lobby' && Boolean(player) && !editing;
-  const showLive = state?.phase === 'live' && Boolean(player);
-  const showClosed = state?.phase === 'live' && !player;
+  const showLive = playing && Boolean(player);
+  const showClosed = playing && !player;
+  const phaseText = state?.phase === 'live'
+    ? 'Игра идёт'
+    : state?.phase === 'done'
+      ? 'Игра завершена'
+      : 'Набор карточек';
 
   return (
     <main className="page narrow">
       {!state && <p className="status">Открываю клетки…</p>}
       {offline && <p className="banner">Связь прервалась.</p>}
-      {state && <p className="phase">{state.phase === 'live' ? 'Игра идёт' : 'Набор карточек'}</p>}
+      {state && <p className="phase">{phaseText}</p>}
+
+      {state?.phase === 'done' && state.template && state.template.length === 9 && (
+        <section className="stack">
+          <h2>Правильный вариант</h2>
+          <WordGrid cells={state.template} />
+        </section>
+      )}
 
       {showClosed && (
         <section className="stack">
           <Brand />
-          <p className="lead">Набор закрыт. Попроси ведущего снова открыть набор.</p>
+          <p className="lead">
+            {state?.phase === 'done'
+              ? 'Игра завершена.'
+              : 'Набор закрыт. Попроси ведущего снова открыть набор.'}
+          </p>
         </section>
       )}
 

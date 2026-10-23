@@ -64,7 +64,7 @@ function sanitize(value: unknown): StoredState {
   const players = Array.isArray(value.players) ? value.players.filter(isPlayer).slice(0, MAX_CARDS) : [];
   const called = Array.isArray(value.called) ? value.called.filter(isCalled) : [];
   return {
-    phase: value.phase === 'live' ? 'live' : 'lobby',
+    phase: value.phase === 'live' || value.phase === 'done' ? value.phase : 'lobby',
     players,
     called,
     revision: typeof value.revision === 'number' && Number.isFinite(value.revision) ? value.revision : 0,
@@ -157,8 +157,14 @@ export function createGame(file: string) {
         throw new GameError(400, 'Сначала нужна хотя бы одна карточка.');
       }
       if (state.phase === 'live') throw new GameError(400, 'Игра уже идёт.');
+      if (state.phase === 'done') throw new GameError(400, 'Сначала сбрось игру.');
       state.phase = 'live';
       state.called = [];
+      commit();
+    },
+    finish() {
+      if (state.phase !== 'live') throw new GameError(400, 'Сначала начни игру.');
+      state.phase = 'done';
       commit();
     },
     toLobby() {
