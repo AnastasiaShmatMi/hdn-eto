@@ -6,6 +6,7 @@ import {
   countCardsWith,
   hostView,
   normalize,
+  OFFICIAL_CELLS,
   publicView,
   spellAllowed,
   usesAllowedWords,
@@ -27,7 +28,16 @@ export class GameError extends Error {
 const MAX_CARDS = 150;
 
 function emptyState(): StoredState {
-  return { phase: 'lobby', players: [], called: [], revision: 0 };
+  return { phase: 'lobby', players: [], called: [], revision: 0, template: OFFICIAL_CELLS.slice() };
+}
+
+function readTemplate(value: unknown): string[] {
+  if (!Array.isArray(value) || !value.every((cell) => typeof cell === 'string')) return OFFICIAL_CELLS.slice();
+  const cells = value;
+  if (!usesAllowedWords(cells)) return OFFICIAL_CELLS.slice();
+  const spelled = spellAllowed(cells);
+  if (new Set(spelled.map((cell) => normalize(cell))).size !== spelled.length) return OFFICIAL_CELLS.slice();
+  return spelled;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -58,6 +68,7 @@ function sanitize(value: unknown): StoredState {
     players,
     called,
     revision: typeof value.revision === 'number' && Number.isFinite(value.revision) ? value.revision : 0,
+    template: readTemplate(value.template),
   };
 }
 
@@ -153,7 +164,26 @@ export function createGame(file: string) {
       commit();
     },
     reset() {
-      state = { phase: 'lobby', players: [], called: [], revision: state.revision };
+      state = {
+        phase: 'lobby',
+        players: [],
+        called: [],
+        revision: state.revision,
+        template: state.template,
+      };
+      commit();
+    },
+    setTemplate(raw: unknown) {
+      if (!Array.isArray(raw) || raw.length !== 9 || raw.some((cell) => typeof cell !== 'string')) {
+        throw new GameError(400, 'Нужны 9 слов.');
+      }
+      const cells = raw as string[];
+      if (!usesAllowedWords(cells)) throw new GameError(400, 'Поставь слова из списка.');
+      const spelled = spellAllowed(cells);
+      if (new Set(spelled.map((cell) => normalize(cell))).size !== spelled.length) {
+        throw new GameError(400, 'Все 9 слов должны быть разными.');
+      }
+      state.template = spelled;
       commit();
     },
     undo() {

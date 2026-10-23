@@ -4,6 +4,7 @@ import { Brand } from '../components/Brand';
 import { QrCode } from '../components/QrCode';
 import { WordGrid } from '../components/WordGrid';
 import { useFresh } from '../fresh';
+import { normalize, usesBank, WORD_BANK } from '../rules';
 import { clearPin, loadPin, savePin } from '../storage';
 import type { HostState } from '../types';
 import { useInterval } from '../useInterval';
@@ -27,13 +28,15 @@ export function Host() {
   const [checking, setChecking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<Note>(null);
-  const [word, setWord] = useState('');
   const [link, setLink] = useState('');
   const [linkTouched, setLinkTouched] = useState(false);
   const [copied, setCopied] = useState(false);
   const [filter, setFilter] = useState<Filter>('all');
   const [armReset, setArmReset] = useState(false);
   const [armDelete, setArmDelete] = useState<string | null>(null);
+  const [orderDraft, setOrderDraft] = useState<string[] | null>(null);
+  const [orderWord, setOrderWord] = useState<string | null>(null);
+  const [orderFrom, setOrderFrom] = useState<number | null>(null);
   const pinRef = useRef(pin);
   const accept = useFresh();
   pinRef.current = pin;
@@ -118,14 +121,60 @@ export function Host() {
     }
   }
 
-  async function speak(text: string, fromField: boolean) {
-    const clean = text.trim();
-    if (!clean) {
-      setNote({ type: 'err', text: 'Напиши слово.' });
+  function beginOrder() {
+    if (!state?.template || state.template.length !== 9) return;
+    setOrderDraft(state.template.slice());
+    setOrderWord(null);
+    setOrderFrom(null);
+    setNote(null);
+  }
+
+  function cancelOrder() {
+    setOrderDraft(null);
+    setOrderWord(null);
+    setOrderFrom(null);
+  }
+
+  function chooseOrder(word: string | null) {
+    setOrderWord(word);
+    setOrderFrom(null);
+  }
+
+  function placeOrder(index: number) {
+    if (!orderDraft) return;
+    const next = orderDraft.slice();
+    if (!orderWord) {
+      if (!next[index]) return;
+      setOrderWord(WORD_BANK.find((word) => normalize(word) === normalize(next[index])) ?? next[index]);
+      setOrderFrom(index);
+      next[index] = '';
+    } else {
+      const word = WORD_BANK.find((item) => normalize(item) === normalize(orderWord)) ?? orderWord;
+      const displaced = next[index];
+      next[index] = word;
+      if (orderFrom !== null && orderFrom !== index) next[orderFrom] = displaced;
+      setOrderWord(null);
+      setOrderFrom(null);
+    }
+    setOrderDraft(next);
+    setNote(null);
+  }
+
+  async function saveOrder() {
+    if (!orderDraft) return;
+    if (orderDraft.some((cell) => !cell) || !usesBank(orderDraft)) {
+      setNote({ type: 'err', text: 'Заполни все девять клеток словами из списка.' });
       return;
     }
-    const ok = await perform(() => hostAction(pin, '/api/host/call', { text: clean }), '');
-    if (ok && fromField) setWord('');
+    if (new Set(orderDraft.map((cell) => normalize(cell))).size !== 9) {
+      setNote({ type: 'err', text: 'Все 9 слов должны быть разными.' });
+      return;
+    }
+    const ok = await perform(
+      () => hostAction(pin, '/api/host/template', { cells: orderDraft }),
+      'Порядок сохранён.',
+    );
+    if (ok) cancelOrder();
   }
 
   if (!pin) {
@@ -181,7 +230,46 @@ export function Host() {
       {state.template && state.template.length === 9 && (
         <section className="panel stack">
           <h2>Правильный вариант</h2>
-          <WordGrid cells={state.template} />
+          {orderDraft ? (
+            <>
+              <p className="muted">Нажми слово и поставь его в клетку. Чтобы поменять местами, нажми одну клетку, потом другую.</p>
+              <div className="word-list" aria-label="Список слов">
+                {WORD_BANK.map((word) => {
+                  const used = orderDraft.some((cell) => normalize(cell) === normalize(word));
+                  const active = !used && orderWord !== null && normalize(orderWord) === normalize(word);
+                  return (
+                    <button
+                      key={word}
+                      type="button"
+                      className={used ? 'pick used' : active ? 'pick selected' : 'pick'}
+                      aria-pressed={active}
+                      disabled={used || busy}
+                      onClick={() => chooseOrder(active ? null : word)}
+                    >
+                      {word}
+                    </button>
+                  );
+                })}
+              </div>
+              <WordGrid cells={orderDraft} onCell={placeOrder} />
+              <div className="row">
+                <button className="primary" type="button" disabled={busy} onClick={() => void saveOrder()}>
+                  Сохранить порядок
+                </button>
+                <button type="button" disabled={busy} onClick={cancelOrder}>Отмена</button>
+              </div>
+              {note && (
+                <p className={note.type === 'err' ? 'error' : 'ok'} role={note.type === 'err' ? 'alert' : 'status'}>
+                  {note.text}
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              <WordGrid cells={state.template} />
+              <button type="button" disabled={busy} onClick={beginOrder}>Поменять порядок</button>
+            </>
+          )}
         </section>
       )}
 
@@ -240,13 +328,6 @@ export function Host() {
           >
             Начать игру
           </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void perform(() => hostAction(pin, '/api/host/lobby'), 'Снова набор карточек.')}
-          >
-            Вернуть набор
-          </button>
           {armReset ? (
             <>
               <button
@@ -263,67 +344,14 @@ export function Host() {
             <button type="button" onClick={() => setArmReset(true)}>Сбросить стол</button>
           )}
         </div>
-        {armReset && <p className="muted">Сбросить стол? Карточки и названные слова удалятся.</p>}
+        {armReset && <p className="muted">Сбросить стол? Карточки удалятся, правильный вариант останется.</p>}
         {state.cardCount === 0 && state.phase === 'lobby' && (
           <p className="muted">Сначала пусть гости сохранят карточки.</p>
         )}
-      </section>
-
-      <section className="panel stack">
-        <form
-          className="call-form"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (state.phase === 'live') void speak(word, true);
-          }}
-        >
-          <label className="field">
-            <span>Назвать слово</span>
-            <input
-              value={word}
-              maxLength={40}
-              disabled={state.phase !== 'live' || busy}
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellCheck={false}
-              onChange={(event) => setWord(event.target.value)}
-            />
-          </label>
-          <button className="primary" type="submit" disabled={state.phase !== 'live' || busy}>Назвать</button>
-        </form>
-        <button
-          type="button"
-          disabled={busy || state.called.length === 0}
-          onClick={() => void perform(() => hostAction(pin, '/api/host/undo'), 'Последнее слово убрано.')}
-        >
-          Отменить последнее слово
-        </button>
-        {note && (
+        {!orderDraft && note && (
           <p className={note.type === 'err' ? 'error' : 'ok'} role={note.type === 'err' ? 'alert' : 'status'}>
             {note.text}
           </p>
-        )}
-      </section>
-
-      <section className="panel stack">
-        <h2>Облако слов</h2>
-        {state.cloud.length === 0 ? (
-          <p className="muted">Облако появится, когда гости сохранят слова.</p>
-        ) : (
-          <div className="cloud">
-            {state.cloud.map((item) => (
-              <button
-                key={item.text}
-                type="button"
-                className={item.called ? 'chip called' : 'chip'}
-                disabled={state.phase !== 'live' || item.called || busy}
-                onClick={() => void speak(item.text, false)}
-              >
-                <span>{item.text}</span>
-                <span className="chip-count">{item.count}</span>
-              </button>
-            ))}
-          </div>
         )}
       </section>
 
@@ -377,7 +405,6 @@ export function Host() {
                   marks={player.marks}
                   winning={player.winning}
                   correct={state.phase === 'live' ? player.templateMarks : undefined}
-                  onCell={state.phase === 'live' ? (index) => void speak(player.cells[index], false) : undefined}
                 />
               </article>
             ))}

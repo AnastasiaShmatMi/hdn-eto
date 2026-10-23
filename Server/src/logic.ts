@@ -20,6 +20,7 @@ export type StoredState = {
   players: StoredPlayer[];
   called: StoredCalled[];
   revision: number;
+  template?: string[];
 };
 
 export type PlayerView = {
@@ -91,11 +92,22 @@ export function spellAllowed(cells: string[]): string[] {
   return cells.map((cell) => ALLOWED_WORDS.find((word) => normalize(word) === normalize(cell)) ?? cell);
 }
 
-export function matchTemplate(cells: string[]): { templateMarks: boolean[]; matchCount: number; matchText: string } {
-  const templateMarks = OFFICIAL_CELLS.map((word, index) => normalize(cells[index] ?? '') === normalize(word));
+export function activeTemplate(state: StoredState): string[] {
+  const template = state.template;
+  if (!template || !usesAllowedWords(template)) return OFFICIAL_CELLS.slice();
+  const spelled = spellAllowed(template);
+  if (new Set(spelled.map((word) => normalize(word))).size !== spelled.length) return OFFICIAL_CELLS.slice();
+  return spelled;
+}
+
+export function matchTemplate(
+  cells: string[],
+  template: string[] = OFFICIAL_CELLS,
+): { templateMarks: boolean[]; matchCount: number; matchText: string } {
+  const templateMarks = template.map((word, index) => normalize(cells[index] ?? '') === normalize(word));
   const matchCount = templateMarks.filter(Boolean).length;
   let matchText = 'Ничего не совпало.';
-  if (matchCount === OFFICIAL_CELLS.length) matchText = 'Всё совпало.';
+  if (matchCount === template.length) matchText = 'Всё совпало.';
   else if (matchCount > 0) matchText = `Совпало ${matchCount} из 9.`;
   return { templateMarks, matchCount, matchText };
 }
@@ -208,7 +220,7 @@ export function hostView(state: StoredState, joinUrl: string) {
     revision: state.revision,
     players: presentPlayers(state),
     cloud: wordCloud(state.players, state.called),
-    template: OFFICIAL_CELLS.slice(),
+    template: activeTemplate(state),
   };
 }
 
@@ -247,7 +259,7 @@ function presentPlayers(state: StoredState): PlayerView[] {
   const views = withDisplayNames(state.players).map((player) => {
     const score = evaluate(player.cells, calledTexts);
     const template = reveal
-      ? matchTemplate(player.cells)
+      ? matchTemplate(player.cells, activeTemplate(state))
       : { templateMarks: Array.from({ length: 9 }, () => false), matchCount: 0, matchText: '' };
     return {
       id: player.id,

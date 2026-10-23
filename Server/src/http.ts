@@ -155,6 +155,12 @@ export async function handle(req: IncomingMessage, res: ServerResponse, game: Ga
         send(res, 200, { ok: true, state: game.hostState() }, cors);
         return;
       }
+      if (method === 'POST' && path === '/api/host/template') {
+        const body = await readJson(req);
+        game.setTemplate(isRecord(body) ? body.cells : undefined);
+        send(res, 200, { ok: true, state: game.hostState() }, cors);
+        return;
+      }
       if (method === 'POST' && path === '/api/host/call') {
         const body = await readJson(req);
         const result = game.call(isRecord(body) ? body.text : undefined);

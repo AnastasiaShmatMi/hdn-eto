@@ -43,13 +43,11 @@ export function Screen() {
         <>
           <Brand heading={false} size="md" />
           <h1 className="screen-started">Игра началась</h1>
-          {last ? (
+          {last && (
             <>
               <p className="screen-word">{last.text}</p>
               <p className="screen-kicker">Сейчас</p>
             </>
-          ) : (
-            <p className="screen-lead">Слова появятся здесь, как только ведущий их назовёт.</p>
           )}
           {previous.length > 0 && (
             <div className="screen-past">

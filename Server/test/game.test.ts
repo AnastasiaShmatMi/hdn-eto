@@ -254,6 +254,25 @@ test('не больше 150 карточек, сброс и отмена сло�
     game.reset();
     assert.equal(game.publicState().cardCount, 0);
     assert.equal(game.publicState().phase, 'lobby');
+    assert.equal('template' in game.publicState(), false);
+    const swapped = OFFICIAL_CELLS.slice();
+    [swapped[4], swapped[5]] = [swapped[5], swapped[4]];
+    game.setTemplate(swapped);
+    assert.throws(() => game.setTemplate(['библия', 'библия']), /9 слов/);
+    assert.throws(() => game.setTemplate(['а', 'б', 'в', 'г', 'д', 'е', 'ж', 'з', 'и']), /списка/);
+    game.saveCard({
+      id: 'player-000-ok',
+      name: 'Гость',
+      cells: OFFICIAL_CELLS.slice(),
+    });
+    game.start();
+    const moved = game.publicState('player-000-ok');
+    assert.equal(moved.player?.matchText, 'Совпало 7 из 9.');
+    assert.equal(moved.player?.templateMarks[4], false);
+    game.reset();
+    assert.deepEqual(game.hostState().template, swapped);
+    const kept = createGame(file);
+    assert.deepEqual(kept.hostState().template, swapped);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
