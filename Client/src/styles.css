@@ -197,9 +197,9 @@ a { color: #a13d6c; font-weight: 800; }
   color: #2c2230;
   font-size: 16px;
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1;
   text-align: center;
-  padding: 8px;
+  padding: 0.9em 8px 0.4em;
   overflow-wrap: anywhere;
 }
 
@@ -373,7 +373,7 @@ h2 { font-size: 22px; }
 
 @media (max-width: 380px) {
   .board { gap: 6px; }
-  .board .cell { min-height: 64px; padding: 6px; }
+  .board .cell { min-height: 64px; padding: 0.9em 6px 0.4em; }
 }
 
 @media (min-width: 900px) {
