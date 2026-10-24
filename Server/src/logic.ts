@@ -202,7 +202,7 @@ export function countCardsWith(players: StoredPlayer[], text: string): number {
 }
 
 export function publicView(state: StoredState, playerId: string | undefined, joinUrl: string) {
-  const players = presentPlayers(state);
+  const players = presentPlayers(state, state.phase === 'done');
   const player = playerId ? players.find((item) => item.id === playerId) ?? null : null;
   return {
     phase: state.phase,
@@ -226,7 +226,7 @@ export function hostView(state: StoredState, joinUrl: string) {
     joinUrl,
     revision: state.revision,
     round: state.round ?? 0,
-    players: presentPlayers(state),
+    players: presentPlayers(state, state.phase !== 'lobby'),
     cloud: wordCloud(state.players, state.called),
     template: activeTemplate(state),
   };
@@ -261,9 +261,8 @@ function withDisplayNames(players: StoredPlayer[]): Array<StoredPlayer & { displ
   });
 }
 
-function presentPlayers(state: StoredState): PlayerView[] {
+function presentPlayers(state: StoredState, reveal: boolean): PlayerView[] {
   const calledTexts = state.called.map((item) => item.text);
-  const reveal = state.phase === 'done';
   const views = withDisplayNames(state.players).map((player) => {
     const template = reveal
       ? matchTemplate(player.cells, activeTemplate(state))

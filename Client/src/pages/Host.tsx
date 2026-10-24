@@ -203,7 +203,7 @@ export function Host() {
     );
   }
 
-  const revealed = state.phase === 'done';
+  const revealed = state.phase !== 'lobby';
   const bingoPlayers = revealed ? state.players.filter((player) => player.bingo) : [];
   const phaseText = state.phase === 'live' ? 'Игра началась' : state.phase === 'done' ? 'Игра завершена' : 'Ждём начала';
   const shown = revealed
@@ -375,10 +375,14 @@ export function Host() {
                 {state.phase === 'live' && (
                   <p className="muted">{player.cells.every((cell) => cell.trim()) ? 'Карточка готова' : 'Ещё заполняет'}</p>
                 )}
-                {revealed && player.matchText && <p className="ok">{player.matchText}</p>}
+                {revealed && player.cells.every((cell) => cell.trim()) && player.matchText && (
+                  <p className="ok">{player.matchText}</p>
+                )}
                 {player.bingo && <p className="bingo-word">БИНГО</p>}
                 {player.bingo && <p>Линия сложилась: {player.lines.join(', ')}</p>}
-                {!player.bingo && player.closest === 2 && <p className="almost">Почти</p>}
+                {player.cells.every((cell) => cell.trim()) && !player.bingo && player.closest === 2 && (
+                  <p className="almost">Почти</p>
+                )}
                 {player.cells.some((cell) => cell.trim()) && (
                   <WordGrid
                     cells={player.cells}

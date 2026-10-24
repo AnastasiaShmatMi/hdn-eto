@@ -236,6 +236,10 @@ test('стол помнит карточку, старт, слово и возв
     assert.equal(live.player?.matchText, '');
     assert.equal(live.player?.bingo, false);
     assert.equal('template' in live, false);
+    const hostLive = game.hostState();
+    assert.equal(hostLive.players[0]?.matchText, 'Совпало 7 из 9.');
+    assert.equal(hostLive.players[0]?.bingo, true);
+    assert.equal(hostLive.players[0]?.templateMarks[0], true);
     assert.throws(() => game.call('Воршип'), /уже звучало/);
     game.finish();
     const done = game.publicState(id);
