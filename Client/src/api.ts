@@ -20,8 +20,6 @@ function freshPath(path: string, method: string): string {
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers);
   if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
-  headers.set('Cache-Control', 'no-cache');
-  headers.set('Pragma', 'no-cache');
   const method = (options.method ?? 'GET').toUpperCase();
   const timeout = typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
     ? AbortSignal.timeout(20000)
