@@ -68,9 +68,15 @@ export function Screen() {
         </section>
       )}
       {state?.phase === 'done' && state.template && state.template.length === 9 && (
-        <section className="screen-answer">
-          <h1 className="screen-started">Правильный вариант</h1>
-          <WordGrid cells={state.template} />
+        <section className="screen-done">
+          <section className="screen-answer">
+            <h1 className="screen-started">Правильный вариант</h1>
+            <WordGrid cells={state.template} />
+          </section>
+          <div className="screen-live-join">
+            <QrCode value={state.joinUrl} />
+            <p className="screen-url">{state.joinUrl}</p>
+          </div>
         </section>
       )}
     </main>

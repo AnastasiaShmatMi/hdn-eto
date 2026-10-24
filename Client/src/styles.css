@@ -288,6 +288,17 @@ a { color: #a13d6c; font-weight: 800; }
   gap: 12px;
 }
 .screen-live .qr-frame img { width: min(52vmin, 420px); }
+.screen-done {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 28px 48px;
+  width: min(1200px, 100%);
+}
+.screen-done .screen-answer { width: min(680px, 100%); flex: 1 1 460px; }
+.screen-done .qr-frame img { width: min(40vmin, 300px); }
+.screen-done .screen-answer .cell { min-height: clamp(72px, 12vh, 140px); font-size: clamp(18px, 2.4vw, 32px); }
 
 .call-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
 .call-form .field { flex: 1 1 240px; }
