@@ -272,6 +272,22 @@ a { color: #a13d6c; font-weight: 800; }
 }
 
 .qr-frame img { display: block; width: min(68vmin, 520px); height: auto; }
+.screen-live {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 28px 48px;
+  width: min(1100px, 100%);
+}
+.screen-live-copy,
+.screen-live-join {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.screen-live .qr-frame img { width: min(52vmin, 420px); }
 
 .call-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
 .call-form .field { flex: 1 1 240px; }

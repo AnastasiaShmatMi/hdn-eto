@@ -41,9 +41,16 @@ export function Screen() {
         </>
       )}
       {state?.phase === 'live' && (
-        <>
-          <Brand heading={false} size="md" />
-          <h1 className="screen-started">Игра началась</h1>
+        <section className="screen-live">
+          <div className="screen-live-copy">
+            <Brand heading={false} size="md" />
+            <h1 className="screen-started">Игра началась</h1>
+            <p className="screen-lead">Можно ещё присоединиться</p>
+          </div>
+          <div className="screen-live-join">
+            <QrCode value={state.joinUrl} />
+            <p className="screen-url">{state.joinUrl}</p>
+          </div>
           {last && (
             <>
               <p className="screen-word">{last.text}</p>
@@ -58,7 +65,7 @@ export function Screen() {
               </div>
             </div>
           )}
-        </>
+        </section>
       )}
       {state?.phase === 'done' && state.template && state.template.length === 9 && (
         <section className="screen-answer">
