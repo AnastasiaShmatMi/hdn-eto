@@ -115,6 +115,13 @@ export async function handle(req: IncomingMessage, res: ServerResponse, game: Ga
       send(res, 200, game.publicState(playerId), cors);
       return;
     }
+    if (method === 'POST' && path === '/api/ready') {
+      const body = await readJson(req);
+      const id = isRecord(body) && typeof body.id === 'string' ? body.id : undefined;
+      game.ready(body);
+      send(res, 200, { ok: true, state: game.publicState(id) }, cors);
+      return;
+    }
     if (method === 'POST' && path === '/api/card') {
       const body = await readJson(req);
       const id = isRecord(body) && typeof body.id === 'string' ? body.id : undefined;

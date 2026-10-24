@@ -42,6 +42,13 @@ export function fetchState(playerId?: string) {
   return request<PublicState>(`/api/state${query}`);
 }
 
+export function readyCard(body: { id: string; name: string }) {
+  return request<{ ok: true; state: PublicState }>('/api/ready', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
 export function saveCard(body: { id: string; name: string; cells: string[] }) {
   return request<{ ok: true; state: PublicState }>('/api/card', {
     method: 'POST',

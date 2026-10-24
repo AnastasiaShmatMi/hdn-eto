@@ -53,12 +53,12 @@ test('запросы: карточка, старт, слово, публично
     });
     assert.equal(started.status, 200);
 
-    const blocked = await fetch(`${base}/api/card`, {
+    const stillOpen = await fetch(`${base}/api/card`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ id, name: 'Аня', cells }),
     });
-    assert.equal(blocked.status, 409);
+    assert.equal(stillOpen.status, 200);
 
     const called = await fetch(`${base}/api/host/call`, {
       method: 'POST',
@@ -79,7 +79,21 @@ test('запросы: карточка, старт, слово, публично
     assert.equal(live.phase, 'live');
     assert.equal(live.called.at(-1)?.text, 'воршип!');
     assert.equal(live.player.marks[0], true);
-    assert.equal(live.player.bingo, true);
+    assert.equal(live.player.bingo, false);
+
+    const finished = await fetch(`${base}/api/host/finish`, {
+      method: 'POST',
+      headers: { 'x-host-pin': 'test-pin' },
+    });
+    assert.equal(finished.status, 200);
+    const revealed = await (await fetch(`${base}/api/state?playerId=${id}`)).json() as { player: { bingo: boolean } };
+    assert.equal(revealed.player.bingo, true);
+    const closed = await fetch(`${base}/api/card`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id, name: 'Аня', cells }),
+    });
+    assert.equal(closed.status, 409);
 
     const returned = await fetch(`${base}/api/host/lobby`, {
       method: 'POST',

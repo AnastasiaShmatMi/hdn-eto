@@ -126,8 +126,8 @@ export function createGame(file: string) {
       if (typeof id !== 'string' || !/^[0-9a-zA-Z-]{8,80}$/.test(id)) {
         throw new GameError(400, 'Не получилось узнать эту карточку. Обнови страницу.');
       }
-      if (state.phase !== 'lobby') {
-        throw new GameError(409, 'Набор закрыт. Попроси ведущего снова открыть набор.');
+      if (state.phase === 'done') {
+        throw new GameError(409, 'Игра завершена.');
       }
       const checked = validateCard(record.name, record.cells);
       if (!checked.ok) throw new GameError(400, checked.error);
@@ -152,9 +152,37 @@ export function createGame(file: string) {
       }
       commit();
     },
+    ready(body: unknown) {
+      const record = isRecord(body) ? body : {};
+      const id = record.id;
+      if (typeof id !== 'string' || !/^[0-9a-zA-Z-]{8,80}$/.test(id)) {
+        throw new GameError(400, 'Не получилось узнать эту карточку. Обнови страницу.');
+      }
+      if (state.phase !== 'lobby') throw new GameError(409, 'Игра уже идёт.');
+      if (typeof record.name !== 'string' || record.name.trim() === '') {
+        throw new GameError(400, 'Напиши, как тебя зовут.');
+      }
+      const name = record.name.trim().replace(/[\s\u00a0]+/g, ' ');
+      if ([...name].length > 24) throw new GameError(400, 'Имя длиннее 24 символов.');
+      const existing = state.players.find((player) => player.id === id);
+      if (!existing && state.players.length >= MAX_CARDS) {
+        throw new GameError(400, 'Больше 150 карточек стол не принимает.');
+      }
+      if (existing) {
+        existing.name = name;
+      } else {
+        state.players.push({
+          id,
+          name,
+          cells: Array.from({ length: 9 }, () => ''),
+          joinedAt: Date.now(),
+        });
+      }
+      commit();
+    },
     start() {
       if (state.players.length === 0) {
-        throw new GameError(400, 'Сначала нужна хотя бы одна карточка.');
+        throw new GameError(400, 'Сначала пусть гости нажмут «Готов к игре».');
       }
       if (state.phase === 'live') throw new GameError(400, 'Игра уже идёт.');
       if (state.phase === 'done') throw new GameError(400, 'Сначала сбрось игру.');

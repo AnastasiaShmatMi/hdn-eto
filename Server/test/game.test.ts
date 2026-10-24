@@ -177,7 +177,7 @@ test('бинго — три клетки шаблона в ряд, столбе�
   const diagonal = ['воршип', 'дом', 'пастор', 'альфа', 'голубь', 'молитва', 'домашка', 'кофе', 'ковер'];
   const almost = ['воршип', 'кофе', 'библия', 'молодежка', 'семья', 'забота', 'работа', 'домашка', 'голубь'];
   const state: StoredState = {
-    phase: 'live',
+    phase: 'done',
     revision: 1,
     called: [],
     players: [
@@ -213,7 +213,7 @@ test('стол помнит карточку, старт, слово и возв
     const id = '11111111-1111-4111-8111-111111111111';
     const cells = OFFICIAL_CELLS.slice();
     [cells[4], cells[5]] = [cells[5], cells[4]];
-    assert.throws(() => game.start(), /Сначала нужна хотя бы одна карточка/);
+    assert.throws(() => game.start(), /Готов к игре/);
     assert.throws(
       () => game.saveCard({ id, name: 'Аня', cells: ['а', 'б', 'в', 'г', 'д', 'е', 'ж', 'з', 'и'] }),
       /слов/,
@@ -225,7 +225,7 @@ test('стол помнит карточку, старт, слово и возв
     assert.equal(hidden.player?.matchCount, 0);
     game.start();
     assert.throws(() => game.start(), /Игра уже идёт/);
-    assert.throws(() => game.saveCard({ id, name: 'Аня', cells }), /Набор закрыт/);
+    game.saveCard({ id, name: 'Аня', cells });
     const called = game.call('воршип!');
     assert.equal(called.count, 1);
     assert.equal(called.message, 'Есть на 1 карточке.');
@@ -233,10 +233,8 @@ test('стол помнит карточку, старт, слово и возв
     assert.equal(live.phase, 'live');
     assert.equal(live.called.at(-1)?.text, 'воршип!');
     assert.equal(live.player?.marks[0], true);
-    assert.equal(live.player?.matchText, 'Совпало 7 из 9.');
-    assert.equal(live.player?.templateMarks[0], true);
-    assert.equal(live.player?.templateMarks[4], false);
-    assert.equal(live.player?.templateMarks[5], false);
+    assert.equal(live.player?.matchText, '');
+    assert.equal(live.player?.bingo, false);
     assert.equal('template' in live, false);
     assert.throws(() => game.call('Воршип'), /уже звучало/);
     game.finish();
@@ -309,6 +307,7 @@ test('не больше 150 карточек, сброс и отмена сло�
       cells: OFFICIAL_CELLS.slice(),
     });
     game.start();
+    game.finish();
     const moved = game.publicState('player-000-ok');
     assert.equal(moved.player?.matchText, 'Совпало 7 из 9.');
     assert.equal(moved.player?.templateMarks[4], false);

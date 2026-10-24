@@ -203,15 +203,17 @@ export function Host() {
     );
   }
 
-  const revealed = state.phase !== 'lobby';
+  const revealed = state.phase === 'done';
   const bingoPlayers = revealed ? state.players.filter((player) => player.bingo) : [];
-  const phaseText = state.phase === 'live' ? 'Игра идёт' : state.phase === 'done' ? 'Игра завершена' : 'Набор карточек';
-  const shown = state.players.filter((player) => {
-    if (filter === 'bingo') return player.bingo;
-    if (filter === 'close') return !player.bingo && player.closest === 2;
-    if (filter === 'wait') return !player.bingo && player.closest < 2;
-    return true;
-  });
+  const phaseText = state.phase === 'live' ? 'Игра началась' : state.phase === 'done' ? 'Игра завершена' : 'Ждём начала';
+  const shown = revealed
+    ? state.players.filter((player) => {
+      if (filter === 'bingo') return player.bingo;
+      if (filter === 'close') return !player.bingo && player.closest === 2;
+      if (filter === 'wait') return !player.bingo && player.closest < 2;
+      return true;
+    })
+    : state.players;
 
   return (
     <main className="page">
@@ -303,7 +305,7 @@ export function Host() {
         </div>
         {armReset && <p className="muted">Сбросить игру? У всех очистятся клетки. Правильный вариант останется.</p>}
         {state.cardCount === 0 && state.phase === 'lobby' && (
-          <p className="muted">Сначала пусть гости сохранят карточки.</p>
+          <p className="muted">Сначала пусть гости нажмут «Готов к игре».</p>
         )}
         {!orderDraft && note && (
           <p className={note.type === 'err' ? 'error' : 'ok'} role={note.type === 'err' ? 'alert' : 'status'}>
@@ -326,6 +328,7 @@ export function Host() {
       )}
 
       <section className="stack">
+        {revealed && (
         <div className="row filters">
           {filters.map((item) => (
             <button
@@ -339,6 +342,8 @@ export function Host() {
           ))}
           <p className="who">{state.cardCountText}</p>
         </div>
+        )}
+        {!revealed && <p className="who">{state.cardCountText}</p>}
         {shown.length === 0 ? (
           <p className="muted">Таких карточек нет.</p>
         ) : (
@@ -366,16 +371,22 @@ export function Host() {
                     <button type="button" onClick={() => setArmDelete(player.id)}>Удалить</button>
                   )}
                 </div>
+                {state.phase === 'lobby' && <p className="muted">Готов к игре</p>}
+                {state.phase === 'live' && (
+                  <p className="muted">{player.cells.every((cell) => cell.trim()) ? 'Карточка готова' : 'Ещё заполняет'}</p>
+                )}
                 {revealed && player.matchText && <p className="ok">{player.matchText}</p>}
                 {player.bingo && <p className="bingo-word">БИНГО</p>}
                 {player.bingo && <p>Линия сложилась: {player.lines.join(', ')}</p>}
                 {!player.bingo && player.closest === 2 && <p className="almost">Почти</p>}
-                <WordGrid
-                  cells={player.cells}
-                  marks={player.marks}
-                  winning={player.winning}
-                  correct={revealed ? player.templateMarks : undefined}
-                />
+                {player.cells.some((cell) => cell.trim()) && (
+                  <WordGrid
+                    cells={player.cells}
+                    marks={player.marks}
+                    winning={player.winning}
+                    correct={revealed ? player.templateMarks : undefined}
+                  />
+                )}
               </article>
             ))}
           </div>

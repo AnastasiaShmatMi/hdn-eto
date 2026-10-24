@@ -34,7 +34,7 @@ export function Screen() {
       {state?.phase === 'lobby' && (
         <>
           <Brand size="xl" />
-          <p className="screen-lead">Наведи камеру и расставь слова</p>
+          <p className="screen-lead">Напиши имя и нажми «Готов к игре»</p>
           <QrCode value={state.joinUrl} />
           <p className="screen-url">{state.joinUrl}</p>
           <p className="screen-count">В наборе {state.cardCountText}</p>

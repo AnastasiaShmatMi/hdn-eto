@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ApiError, fetchState, saveCard } from '../api';
+import { ApiError, fetchState, readyCard, saveCard } from '../api';
 import { Brand } from '../components/Brand';
 import { WordGrid } from '../components/WordGrid';
 import { useFresh } from '../fresh';
@@ -29,6 +29,7 @@ export function Guest() {
   const [state, setState] = useState<PublicState | null>(null);
   const [offline, setOffline] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [renaming, setRenaming] = useState(false);
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
@@ -41,7 +42,8 @@ export function Guest() {
       if (accept(next)) {
         setState(next);
         setOffline(false);
-        if (next.phase !== 'lobby') setEditing(false);
+        if (next.phase === 'live') setRenaming(false);
+        if (next.phase !== 'live') setEditing(false);
         if (typeof next.round === 'number') {
           const seen = loadRound();
           if (seen === null) saveRound(next.round);
@@ -102,6 +104,28 @@ export function Guest() {
     setFormError('');
   }
 
+  async function ready() {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setFormError('Напиши, как тебя зовут.');
+      return;
+    }
+    setSaving(true);
+    setFormError('');
+    try {
+      const saved = await readyCard({ id, name: trimmed });
+      if (accept(saved.state, true)) setState(saved.state);
+      setName(trimmed);
+      remember(trimmed, cells);
+      setRenaming(false);
+      setOffline(false);
+    } catch (error) {
+      setFormError(error instanceof ApiError ? error.message : 'Связь прервалась.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function submit() {
     const checked = validateCard(name, cells);
     if (!checked.ok) {
@@ -136,16 +160,18 @@ export function Guest() {
   }
 
   const player = state?.player ?? null;
-  const playing = state?.phase === 'live' || state?.phase === 'done';
-  const showForm = state?.phase === 'lobby' && (!player || editing);
-  const showAccepted = state?.phase === 'lobby' && Boolean(player) && !editing;
-  const showLive = playing && Boolean(player);
-  const showClosed = playing && !player;
+  const filled = Boolean(player && player.cells.length === 9 && player.cells.every((cell) => cell.trim() !== ''));
+  const showJoin = state?.phase === 'lobby' && (!player || renaming);
+  const showWait = state?.phase === 'lobby' && Boolean(player) && !renaming;
+  const showFill = state?.phase === 'live' && (!filled || editing);
+  const showAccepted = state?.phase === 'live' && filled && !editing;
+  const showLive = state?.phase === 'done' && Boolean(player);
+  const showClosed = state?.phase === 'done' && !player;
   const phaseText = state?.phase === 'live'
-    ? 'Игра идёт'
+    ? 'Игра началась'
     : state?.phase === 'done'
       ? 'Игра завершена'
-      : 'Набор карточек';
+      : 'Ждём начала';
 
   return (
     <main className="page narrow">
@@ -163,15 +189,58 @@ export function Guest() {
       {showClosed && (
         <section className="stack">
           <Brand />
-          <p className="lead">
-            {state?.phase === 'done'
-              ? 'Игра завершена.'
-              : 'Набор закрыт. Попроси ведущего снова открыть набор.'}
-          </p>
+          <p className="lead">Игра завершена.</p>
         </section>
       )}
 
-      {showForm && (
+      {showJoin && (
+        <form
+          className="stack"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void ready();
+          }}
+        >
+          <label className="field">
+            <span>Имя</span>
+            <input
+              value={name}
+              maxLength={24}
+              autoComplete="name"
+              autoCapitalize="words"
+              onChange={(event) => {
+                setName(event.target.value);
+                remember(event.target.value, cells);
+              }}
+            />
+          </label>
+          <p className="muted">
+            Напиши имя и нажми «Готов к игре». Когда ведущий начнёт, появятся слова: выбери девять и расставь их в клетки, затем нажми «Готово». Когда все заполнят, ведущий завершит игру, и откроется правильный вариант.
+          </p>
+          {formError && <p className="error" role="alert">{formError}</p>}
+          <button className="primary" type="submit" disabled={saving}>Готов к игре</button>
+        </form>
+      )}
+
+      {showWait && player && (
+        <section className="stack">
+          <p className="ok">Ты в игре</p>
+          <p className="who">{player.name}</p>
+          <p className="muted">Слова появятся, когда ведущий нажмёт «Начать игру».</p>
+          <button
+            type="button"
+            onClick={() => {
+              setName(player.name);
+              setFormError('');
+              setRenaming(true);
+            }}
+          >
+            Изменить имя
+          </button>
+        </section>
+      )}
+
+      {showFill && (
         <form
           className="stack"
           onSubmit={(event) => {
@@ -193,7 +262,7 @@ export function Guest() {
             />
           </label>
           <p className="muted">Выбери нужные слова и поставь их в клетки.</p>
-          <div className="word-list" aria-label="Список слов">
+          <div className="word-list two" aria-label="Список слов">
             {GUEST_WORDS.map((word) => {
               const used = cells.some((cell) => normalize(cell) === normalize(word));
               const active = !used && selected !== null && normalize(selected) === normalize(word);
@@ -224,7 +293,7 @@ export function Guest() {
       {showAccepted && player && (
         <section className="stack">
           <p className="ok">Карточка принята</p>
-          <p className="muted">Порядок можно поправить, пока ведущий не начал.</p>
+          <p className="muted">Порядок можно поправить, пока ведущий не завершил игру.</p>
           <p className="who">{player.name}</p>
           <Brand />
           <WordGrid cells={player.cells} />

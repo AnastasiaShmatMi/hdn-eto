@@ -263,7 +263,7 @@ function withDisplayNames(players: StoredPlayer[]): Array<StoredPlayer & { displ
 
 function presentPlayers(state: StoredState): PlayerView[] {
   const calledTexts = state.called.map((item) => item.text);
-  const reveal = state.phase !== 'lobby';
+  const reveal = state.phase === 'done';
   const views = withDisplayNames(state.players).map((player) => {
     const template = reveal
       ? matchTemplate(player.cells, activeTemplate(state))
