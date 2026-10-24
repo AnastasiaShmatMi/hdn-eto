@@ -305,7 +305,7 @@ export function Host() {
         </div>
         {armReset && <p className="muted">Сбросить игру? У всех очистятся клетки. Правильный вариант останется.</p>}
         {state.cardCount === 0 && state.phase === 'lobby' && (
-          <p className="muted">Сначала пусть гости нажмут «Готов к игре».</p>
+          <p className="muted">Сначала пусть гости нажмут «Готово».</p>
         )}
         {!orderDraft && note && (
           <p className={note.type === 'err' ? 'error' : 'ok'} role={note.type === 'err' ? 'alert' : 'status'}>
@@ -371,8 +371,7 @@ export function Host() {
                     <button type="button" onClick={() => setArmDelete(player.id)}>Удалить</button>
                   )}
                 </div>
-                {state.phase === 'lobby' && <p className="muted">Готов к игре</p>}
-                {state.phase === 'live' && (
+                {state.phase !== 'done' && (
                   <p className="muted">{player.cells.every((cell) => cell.trim()) ? 'Карточка готова' : 'Ещё заполняет'}</p>
                 )}
                 {revealed && player.cells.every((cell) => cell.trim()) && player.matchText && (

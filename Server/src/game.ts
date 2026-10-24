@@ -182,7 +182,7 @@ export function createGame(file: string) {
     },
     start() {
       if (state.players.length === 0) {
-        throw new GameError(400, 'Сначала пусть гости нажмут «Готов к игре».');
+        throw new GameError(400, 'Сначала пусть гости нажмут «Готово».');
       }
       if (state.phase === 'live') throw new GameError(400, 'Игра уже идёт.');
       if (state.phase === 'done') throw new GameError(400, 'Сначала сбрось игру.');

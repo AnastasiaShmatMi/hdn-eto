@@ -213,7 +213,7 @@ test('стол помнит карточку, старт, слово и возв
     const id = '11111111-1111-4111-8111-111111111111';
     const cells = OFFICIAL_CELLS.slice();
     [cells[4], cells[5]] = [cells[5], cells[4]];
-    assert.throws(() => game.start(), /Готов к игре/);
+    assert.throws(() => game.start(), /Готово/);
     assert.throws(
       () => game.saveCard({ id, name: 'Аня', cells: ['а', 'б', 'в', 'г', 'д', 'е', 'ж', 'з', 'и'] }),
       /слов/,
