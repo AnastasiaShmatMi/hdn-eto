@@ -105,7 +105,11 @@ export function Guest() {
     setFormError('');
     try {
       const saved = await saveCard({ id, name: checked.name, cells: checked.cells });
-      if (accept(saved.state)) setState(saved.state);
+      if (accept(saved.state, true)) setState(saved.state);
+      if (!saved.state.player) {
+        const again = await fetchState(id);
+        if (accept(again, true)) setState(again);
+      }
       setName(checked.name);
       setCells(checked.cells);
       setSelected(null);

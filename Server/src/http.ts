@@ -52,8 +52,10 @@ function corsHeaders(origin: string): Record<string, string> {
 
 function send(res: ServerResponse, status: number, body: unknown, extra: Record<string, string>) {
   const headers: Record<string, string> = {
-    'Cache-Control': 'no-store',
     ...extra,
+    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+    Pragma: 'no-cache',
+    Expires: '0',
   };
   if (body === null) {
     res.writeHead(status, headers);
@@ -191,7 +193,9 @@ export function listen(game: Game, port: number, host: string) {
       if (!res.headersSent) {
         res.writeHead(500, {
           'Content-Type': 'application/json; charset=utf-8',
-          'Cache-Control': 'no-store',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          Pragma: 'no-cache',
+          Expires: '0',
         });
         res.end(JSON.stringify({ error: 'Что-то сломалось на сервере.' }));
       }

@@ -72,7 +72,7 @@ export function Host() {
       const table = await fetchHost(next);
       savePin(next);
       setPin(next);
-      if (accept(table)) setState(table);
+      if (accept(table, true)) setState(table);
       setOffline(false);
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) setLoginError('Неверный код.');
@@ -95,7 +95,7 @@ export function Host() {
     setNote(null);
     try {
       const result = await task();
-      if (accept(result.state)) setState(result.state);
+      if (accept(result.state, true)) setState(result.state);
       setNote({ type: 'ok', text: result.message || fallback });
       setOffline(false);
       return true;

@@ -11,13 +11,26 @@ export class ApiError extends Error {
   }
 }
 
+function freshPath(path: string, method: string): string {
+  if (method !== 'GET') return path;
+  const stamp = `_=${Date.now()}`;
+  return path.includes('?') ? `${path}&${stamp}` : `${path}?${stamp}`;
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers);
   if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
-  const response = await fetch(`${base}${path}`, {
+  headers.set('Cache-Control', 'no-cache');
+  headers.set('Pragma', 'no-cache');
+  const method = (options.method ?? 'GET').toUpperCase();
+  const timeout = typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+    ? AbortSignal.timeout(20000)
+    : undefined;
+  const response = await fetch(`${base}${freshPath(path, method)}`, {
     ...options,
     headers,
     cache: 'no-store',
+    signal: options.signal ?? timeout,
   });
   const data = await response.json().catch(() => ({})) as { error?: unknown };
   if (!response.ok) {
