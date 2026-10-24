@@ -66,6 +66,17 @@ export function Guest() {
     saveDraft({ name: nextName, cells: nextCells });
   }
 
+  function clearAll() {
+    const blank = Array.from({ length: 9 }, () => '');
+    setName('');
+    setCells(blank);
+    setSelected(null);
+    setSelectedFrom(null);
+    setFormError('');
+    setEditing(true);
+    remember('', blank);
+  }
+
   function choose(word: string | null) {
     setSelected(word);
     setSelectedFrom(null);
@@ -203,7 +214,10 @@ export function Guest() {
           <Brand />
           <WordGrid cells={cells} onCell={place} />
           {formError && <p className="error" role="alert">{formError}</p>}
-          <button className="primary" type="submit" disabled={saving}>Готово</button>
+          <div className="row">
+            <button className="primary" type="submit" disabled={saving}>Готово</button>
+            <button type="button" disabled={saving} onClick={clearAll}>Сбросить всё</button>
+          </div>
         </form>
       )}
 
@@ -228,6 +242,7 @@ export function Guest() {
           >
             Поправить порядок
           </button>
+          <button type="button" onClick={clearAll}>Сбросить всё</button>
         </section>
       )}
 
